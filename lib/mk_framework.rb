@@ -10,22 +10,32 @@ module MK
     plugin :json
     plugin :json_parser
 
-    attr_reader :routes_path
-
-    def initialize(routes_path = 'routes')
-      @routes_path = routes_path
-      @app = lambda { |env| [404, {}, []] }
-      load_routes
+    # Class attribute to store routes path
+    class << self
+      attr_accessor :routes_path
     end
 
-    def call(env)
-      super(env)
+    # Implement the Roda application pattern correctly
+    def self.inherited(subclass)
+      super
+      subclass.routes_path = 'routes'
+      
+      # Set up the default route block for the application
+      subclass.route do |r|
+        # Default root route
+        r.root do
+          "Welcome to MK Framework"
+        end
+      end
+      
+      # Load the routes for this application class
+      subclass.load_routes
     end
-
-    private
-
-    # Load all routes based on the directory structure
-    def load_routes
+    
+    # Class method to load routes based on the directory structure
+    def self.load_routes
+      return unless routes_path
+      
       Dir.glob(File.join(routes_path, '*')).each do |resource_dir|
         next unless File.directory?(resource_dir)
 
@@ -35,104 +45,119 @@ module MK
     end
 
     # Register routes for a specific resource
-    def register_resource_routes(resource_name)
+    def self.register_resource_routes(resource_name)
       controllers_dir = File.join(routes_path, resource_name, 'controllers')
       handlers_dir = File.join(routes_path, resource_name, 'handlers')
 
       # Load all controllers and handlers
-      Dir.glob(File.join(controllers_dir, '*.rb')).each { |file| require file }
-      Dir.glob(File.join(handlers_dir, '*.rb')).each { |file| require file }
+      Dir.glob(File.join(controllers_dir, '*.rb')).each do |file|
+        require File.expand_path(file)
+      end
+      
+      Dir.glob(File.join(handlers_dir, '*.rb')).each do |file|
+        require File.expand_path(file)
+      end
 
-      # Create route matchers for this resource
-      self.class.class_eval do
-        route do |r|
-          r.on resource_name do
-            # Index route
-            r.is do
-              r.get do
-                controller_name = "#{resource_name.capitalize}IndexController"
-                handler_name = "#{resource_name.capitalize}IndexHandler"
+      # Get the current route block
+      current_route_block = @route_block
+      
+      # Create a new route block that includes our resource routes
+      route do |r|
+        # First evaluate the existing routes
+        result = instance_exec(r, &current_route_block) if current_route_block
+        
+        # Then add our resource routes
+        r.on resource_name do
+          # Index route
+          r.is do
+            r.get do
+              controller_name = "#{resource_name.capitalize}IndexController"
+              handler_name = "#{resource_name.capitalize}IndexHandler"
 
-                if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
-                  controller = Object.const_get(controller_name).new
-                  result = controller.execute(r)
+              if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
+                controller = Object.const_get(controller_name).new
+                result = controller.execute(r)
 
-                  handler = Object.const_get(handler_name).new(result)
-                  handler.execute(r)
-                else
-                  r.halt 404, { error: "Route not implemented" }
-                end
-              end
-
-              # Create route
-              r.post do
-                controller_name = "#{resource_name.capitalize}CreateController"
-                handler_name = "#{resource_name.capitalize}CreateHandler"
-
-                if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
-                  controller = Object.const_get(controller_name).new
-                  result = controller.execute(r)
-
-                  handler = Object.const_get(handler_name).new(result)
-                  handler.execute(r)
-                else
-                  r.halt 404, { error: "Route not implemented" }
-                end
+                handler = Object.const_get(handler_name).new(result)
+                handler.execute(r)
+              else
+                response.status = 404
+                { error: "Route not implemented" }
               end
             end
 
-            # Show, Update, Delete routes
-            r.on String do |id|
-              r.is do
-                # Store id in params
-                r.params['id'] = id
+            # Create route
+            r.post do
+              controller_name = "#{resource_name.capitalize}CreateController"
+              handler_name = "#{resource_name.capitalize}CreateHandler"
 
-                # Show route
-                r.get do
-                  controller_name = "#{resource_name.capitalize}ShowController"
-                  handler_name = "#{resource_name.capitalize}ShowHandler"
+              if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
+                controller = Object.const_get(controller_name).new
+                result = controller.execute(r)
 
-                  if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
-                    controller = Object.const_get(controller_name).new
-                    result = controller.execute(r)
+                handler = Object.const_get(handler_name).new(result)
+                handler.execute(r)
+              else
+                response.status = 404
+                { error: "Route not implemented" }
+              end
+            end
+          end
 
-                    handler = Object.const_get(handler_name).new(result)
-                    handler.execute(r)
-                  else
-                    r.halt 404, { error: "Route not implemented" }
-                  end
+          # Show, Update, Delete routes
+          r.on String do |id|
+            r.is do
+              # Store id in params
+              r.params['id'] = id
+
+              # Show route
+              r.get do
+                controller_name = "#{resource_name.capitalize}ShowController"
+                handler_name = "#{resource_name.capitalize}ShowHandler"
+
+                if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
+                  controller = Object.const_get(controller_name).new
+                  result = controller.execute(r)
+
+                  handler = Object.const_get(handler_name).new(result)
+                  handler.execute(r)
+                else
+                  response.status = 404
+                  { error: "Route not implemented" }
                 end
+              end
 
-                # Update route
-                r.put do
-                  controller_name = "#{resource_name.capitalize}UpdateController"
-                  handler_name = "#{resource_name.capitalize}UpdateHandler"
+              # Update route
+              r.put do
+                controller_name = "#{resource_name.capitalize}UpdateController"
+                handler_name = "#{resource_name.capitalize}UpdateHandler"
 
-                  if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
-                    controller = Object.const_get(controller_name).new
-                    result = controller.execute(r)
+                if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
+                  controller = Object.const_get(controller_name).new
+                  result = controller.execute(r)
 
-                    handler = Object.const_get(handler_name).new(result)
-                    handler.execute(r)
-                  else
-                    r.halt 404, { error: "Route not implemented" }
-                  end
+                  handler = Object.const_get(handler_name).new(result)
+                  handler.execute(r)
+                else
+                  response.status = 404
+                  { error: "Route not implemented" }
                 end
+              end
 
-                # Delete route
-                r.delete do
-                  controller_name = "#{resource_name.capitalize}DeleteController"
-                  handler_name = "#{resource_name.capitalize}DeleteHandler"
+              # Delete route
+              r.delete do
+                controller_name = "#{resource_name.capitalize}DeleteController"
+                handler_name = "#{resource_name.capitalize}DeleteHandler"
 
-                  if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
-                    controller = Object.const_get(controller_name).new
-                    result = controller.execute(r)
+                if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
+                  controller = Object.const_get(controller_name).new
+                  result = controller.execute(r)
 
-                    handler = Object.const_get(handler_name).new(result)
-                    handler.execute(r)
-                  else
-                    r.halt 404, { error: "Route not implemented" }
-                  end
+                  handler = Object.const_get(handler_name).new(result)
+                  handler.execute(r)
+                else
+                  response.status = 404
+                  { error: "Route not implemented" }
                 end
               end
             end

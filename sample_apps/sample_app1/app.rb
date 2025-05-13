@@ -23,7 +23,5 @@ require_relative 'models/todo'
 
 # Create application instance
 class TodoApp < MK::Application
-  def initialize
-    super
-  end
+  # No need to override initialize - the parent class handles everything
 end

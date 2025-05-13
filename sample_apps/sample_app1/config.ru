@@ -2,4 +2,5 @@
 
 require_relative 'app'
 
-run TodoApp.new
+# Run the TodoApp class directly as a Rack app
+run TodoApp
