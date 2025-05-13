@@ -216,12 +216,20 @@ module MK
     end
 
     def execute(r)
-      # For index and show, just return the model
-      return model if self.class.name.end_with?('IndexHandler') || self.class.name.end_with?('ShowHandler')
-
-      # For create, update, delete, handle success/fail paths
+      # Execute the handler's route block
       result = instance_exec(r, &route_block)
+      
+      # If the result is a model object, convert to hash (JSON-compatible)
+      if result.is_a?(Sequel::Model)
+        return result.to_hash
+      end
+      
+      # If the result is a raw model (for index/show actions)
+      if model && (self.class.name.end_with?('IndexHandler') || self.class.name.end_with?('ShowHandler'))
+        return model.respond_to?(:map) ? model.map(&:to_hash) : model.to_hash
+      end
 
+      # For other cases (create, update, delete with success/failure blocks)
       if @success_block && @fail_block
         if model.save
           instance_exec(r, &@success_block)
@@ -229,6 +237,7 @@ module MK
           instance_exec(r, &@fail_block)
         end
       else
+        # Ensure we return a valid Roda response (String, Hash, Array)
         result
       end
     end
