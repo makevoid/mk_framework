@@ -7,17 +7,19 @@ class TodosUpdateHandler < MK::Handler
       r.response.status = 404
       return { error: "Todo not found" }
     end
-    
-    # Save the updated todo
-    if model.save
+
+    # Use success and fail blocks for the save operation
+    success do |r|
       # Return the updated todo
       model.to_hash
-    else
+    end
+
+    error do |r|
       # Return validation errors if save fails
       r.response.status = 422
-      { 
-        error: "Validation failed", 
-        details: model.errors 
+      {
+        error: "Validation failed",
+        details: model.errors
       }
     end
   end

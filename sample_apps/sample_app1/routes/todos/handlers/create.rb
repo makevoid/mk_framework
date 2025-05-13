@@ -2,17 +2,19 @@
 
 class TodosCreateHandler < MK::Handler
   route do |r|
-    # Process the result from the controller
-    if model.save
+    # Use success and fail blocks
+    success do |r|
       # Return success response with the created todo
       r.response.status = 201
       model.to_hash
-    else
+    end
+
+    error do |r|
       # Return validation error response
       r.response.status = 422
-      { 
-        error: "Validation failed", 
-        details: model.errors 
+      {
+        error: "Validation failed",
+        details: model.errors
       }
     end
   end

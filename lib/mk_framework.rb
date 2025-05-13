@@ -128,24 +128,26 @@ module MK
               end
 
               # Update route
-              r.put do
-                controller_name = "#{resource_name.capitalize}UpdateController"
-                handler_name = "#{resource_name.capitalize}UpdateHandler"
+              r.is do
+                r.post do
+                  controller_name = "#{resource_name.capitalize}UpdateController"
+                  handler_name = "#{resource_name.capitalize}UpdateHandler"
 
-                if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
-                  controller = Object.const_get(controller_name).new
-                  result = controller.execute(r)
+                  if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
+                    controller = Object.const_get(controller_name).new
+                    result = controller.execute(r)
 
-                  handler = Object.const_get(handler_name).new(result)
-                  handler.execute(r)
-                else
-                  response.status = 404
-                  { error: "Route not implemented" }
+                    handler = Object.const_get(handler_name).new(result)
+                    handler.execute(r)
+                  else
+                    response.status = 404
+                    { error: "Route not implemented" }
+                  end
                 end
               end
 
               # Delete route
-              r.delete do
+              r.post "delete" do
                 controller_name = "#{resource_name.capitalize}DeleteController"
                 handler_name = "#{resource_name.capitalize}DeleteHandler"
 
@@ -211,7 +213,7 @@ module MK
       self
     end
 
-    def fail(&block)
+    def error(&block)
       @fail_block = block
       self
     end
