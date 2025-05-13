@@ -1,0 +1,246 @@
+# frozen_string_literal: true
+
+require 'roda'
+require 'sequel'
+
+module MK
+  # Base MK application
+  class Application < Roda
+    plugin :all_verbs
+    plugin :json
+    plugin :json_parser
+
+    attr_reader :routes_path
+
+    def initialize(routes_path = 'routes')
+      @routes_path = routes_path
+      super()
+      load_routes
+    end
+
+    private
+
+    # Load all routes based on the directory structure
+    def load_routes
+      Dir.glob(File.join(routes_path, '*')).each do |resource_dir|
+        next unless File.directory?(resource_dir)
+
+        resource_name = File.basename(resource_dir)
+        register_resource_routes(resource_name)
+      end
+    end
+
+    # Register routes for a specific resource
+    def register_resource_routes(resource_name)
+      controllers_dir = File.join(routes_path, resource_name, 'controllers')
+      handlers_dir = File.join(routes_path, resource_name, 'handlers')
+
+      # Load all controllers and handlers
+      Dir.glob(File.join(controllers_dir, '*.rb')).each { |file| require file }
+      Dir.glob(File.join(handlers_dir, '*.rb')).each { |file| require file }
+
+      # Create route matchers for this resource
+      self.class.class_eval do
+        route do |r|
+          r.on resource_name do
+            # Index route
+            r.is do
+              r.get do
+                controller_name = "#{resource_name.capitalize}IndexController"
+                handler_name = "#{resource_name.capitalize}IndexHandler"
+
+                if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
+                  controller = Object.const_get(controller_name).new
+                  result = controller.execute(r)
+
+                  handler = Object.const_get(handler_name).new(result)
+                  handler.execute(r)
+                else
+                  r.halt 404, { error: "Route not implemented" }
+                end
+              end
+
+              # Create route
+              r.post do
+                controller_name = "#{resource_name.capitalize}CreateController"
+                handler_name = "#{resource_name.capitalize}CreateHandler"
+
+                if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
+                  controller = Object.const_get(controller_name).new
+                  result = controller.execute(r)
+
+                  handler = Object.const_get(handler_name).new(result)
+                  handler.execute(r)
+                else
+                  r.halt 404, { error: "Route not implemented" }
+                end
+              end
+            end
+
+            # Show, Update, Delete routes
+            r.on String do |id|
+              r.is do
+                # Store id in params
+                r.params['id'] = id
+
+                # Show route
+                r.get do
+                  controller_name = "#{resource_name.capitalize}ShowController"
+                  handler_name = "#{resource_name.capitalize}ShowHandler"
+
+                  if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
+                    controller = Object.const_get(controller_name).new
+                    result = controller.execute(r)
+
+                    handler = Object.const_get(handler_name).new(result)
+                    handler.execute(r)
+                  else
+                    r.halt 404, { error: "Route not implemented" }
+                  end
+                end
+
+                # Update route
+                r.put do
+                  controller_name = "#{resource_name.capitalize}UpdateController"
+                  handler_name = "#{resource_name.capitalize}UpdateHandler"
+
+                  if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
+                    controller = Object.const_get(controller_name).new
+                    result = controller.execute(r)
+
+                    handler = Object.const_get(handler_name).new(result)
+                    handler.execute(r)
+                  else
+                    r.halt 404, { error: "Route not implemented" }
+                  end
+                end
+
+                # Delete route
+                r.delete do
+                  controller_name = "#{resource_name.capitalize}DeleteController"
+                  handler_name = "#{resource_name.capitalize}DeleteHandler"
+
+                  if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
+                    controller = Object.const_get(controller_name).new
+                    result = controller.execute(r)
+
+                    handler = Object.const_get(handler_name).new(result)
+                    handler.execute(r)
+                  else
+                    r.halt 404, { error: "Route not implemented" }
+                  end
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+
+  # Base controller class for MK framework
+  class Controller
+    class << self
+      def route(&block)
+        define_method(:route_block) do
+          block
+        end
+      end
+    end
+
+    def execute(r)
+      # Execute the route block in the controller's context
+      # This allows the controller to access instance variables and methods
+      instance_exec(r, &route_block)
+    end
+  end
+
+  # Base handler class for MK framework
+  class Handler
+    attr_reader :model
+
+    class << self
+      def route(&block)
+        define_method(:route_block) do
+          block
+        end
+      end
+    end
+
+    def initialize(model)
+      @model = model
+      @success_block = nil
+      @fail_block = nil
+
+      # Dynamically define accessors for the model
+      define_model_accessors if model
+    end
+
+    def success(&block)
+      @success_block = block
+      self
+    end
+
+    def fail(&block)
+      @fail_block = block
+      self
+    end
+
+    def execute(r)
+      # For index and show, just return the model
+      return model if self.class.name.end_with?('IndexHandler') || self.class.name.end_with?('ShowHandler')
+
+      # For create, update, delete, handle success/fail paths
+      result = instance_exec(r, &route_block)
+
+      if @success_block && @fail_block
+        if model.save
+          instance_exec(r, &@success_block)
+        else
+          instance_exec(r, &@fail_block)
+        end
+      else
+        result
+      end
+    end
+
+    private
+
+    # Define accessors for model object dynamically using define_method
+    def define_model_accessors
+      # First define a method to access the model directly
+      self.class.class_eval do
+        define_method(:todo) { @model } if @model.is_a?(Sequel::Model)
+      end
+
+      # Then define methods for all model attributes
+      if @model.is_a?(Sequel::Model)
+        @model.columns.each do |column|
+          self.class.class_eval do
+            define_method(column) { @model[column] }
+            define_method("#{column}=") { |value| @model[column] = value }
+          end
+        end
+      end
+    end
+  end
+
+  # Helper methods for string to constant conversion
+  module StringExtensions
+    def constantize
+      names = self.split('::')
+      names.shift if names.empty? || names.first.empty?
+
+      constant = Object
+      names.each do |name|
+        constant = constant.const_get(name, false)
+      end
+      constant
+    end
+  end
+end
+
+# Add constantize method to String class
+class String
+  include MK::StringExtensions
+end
