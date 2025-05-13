@@ -6,7 +6,7 @@ class TodosShowHandler < MK::Handler
       r.response.status = 404
       { error: "Todo not found" }
     else
-      model.to_hash
+      model
     end
   end
 end
