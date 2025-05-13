@@ -263,23 +263,4 @@ module MK
       end
     end
   end
-
-  # Helper methods for string to constant conversion
-  module StringExtensions
-    def constantize
-      names = self.split('::')
-      names.shift if names.empty? || names.first.empty?
-
-      constant = Object
-      names.each do |name|
-        constant = constant.const_get(name, false)
-      end
-      constant
-    end
-  end
-end
-
-# Add constantize method to String class
-class String
-  include MK::StringExtensions
 end
