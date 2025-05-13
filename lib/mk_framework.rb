@@ -9,6 +9,7 @@ module MK
     plugin :all_verbs
     plugin :json
     plugin :json_parser
+    plugin :halt
 
     # Class attribute to store routes path
     class << self
@@ -234,10 +235,21 @@ module MK
 
       # For other cases (create, update, delete with success/failure blocks)
       if @success_block && @fail_block
-        if model.save
-          instance_exec(r, &@success_block)
-        else
+        begin
+          if model.save
+            instance_exec(r, &@success_block)
+          else
+            instance_exec(r, &@fail_block)
+          end
+        rescue Sequel::ValidationFailed => e
           instance_exec(r, &@fail_block)
+        rescue StandardError => e
+          # Handle other errors
+          r.response.status = 500
+          return {
+            error: "Server error",
+            message: e.message
+          }
         end
       else
         # Ensure we return a valid Roda response (String, Hash, Array)
