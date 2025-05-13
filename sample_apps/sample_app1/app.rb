@@ -24,6 +24,6 @@ require_relative 'models/todo'
 # Create application instance
 class TodoApp < MK::Application
   def initialize
-    super('routes') # Path to the routes directory
+    super
   end
 end

@@ -14,8 +14,12 @@ module MK
 
     def initialize(routes_path = 'routes')
       @routes_path = routes_path
-      super()
+      @app = lambda { |env| [404, {}, []] }
       load_routes
+    end
+
+    def call(env)
+      super(env)
     end
 
     private
