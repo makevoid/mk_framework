@@ -19,23 +19,23 @@ module MK
     def self.inherited(subclass)
       super
       subclass.routes_path = 'routes'
-      
+
       # Set up the default route block for the application
       subclass.route do |r|
         # Default root route
         r.root do
-          "Welcome to MK Framework"
+          { message: "Welcome to MK Framework" }
         end
       end
-      
+
       # Load the routes for this application class
       subclass.load_routes
     end
-    
+
     # Class method to load routes based on the directory structure
     def self.load_routes
       return unless routes_path
-      
+
       Dir.glob(File.join(routes_path, '*')).each do |resource_dir|
         next unless File.directory?(resource_dir)
 
@@ -53,19 +53,19 @@ module MK
       Dir.glob(File.join(controllers_dir, '*.rb')).each do |file|
         require File.expand_path(file)
       end
-      
+
       Dir.glob(File.join(handlers_dir, '*.rb')).each do |file|
         require File.expand_path(file)
       end
 
       # Get the current route block
       current_route_block = @route_block
-      
+
       # Create a new route block that includes our resource routes
       route do |r|
         # First evaluate the existing routes
         result = instance_exec(r, &current_route_block) if current_route_block
-        
+
         # Then add our resource routes
         r.on resource_name do
           # Index route
@@ -198,6 +198,7 @@ module MK
 
     def initialize(model)
       @model = model
+      @model_name = model.class.name.downcase
       @success_block = nil
       @fail_block = nil
 
@@ -218,12 +219,12 @@ module MK
     def execute(r)
       # Execute the handler's route block
       result = instance_exec(r, &route_block)
-      
+
       # If the result is a model object, convert to hash (JSON-compatible)
       if result.is_a?(Sequel::Model)
         return result.to_hash
       end
-      
+
       # If the result is a raw model (for index/show actions)
       if model && (self.class.name.end_with?('IndexHandler') || self.class.name.end_with?('ShowHandler'))
         return model.respond_to?(:map) ? model.map(&:to_hash) : model.to_hash
@@ -248,7 +249,7 @@ module MK
     def define_model_accessors
       # First define a method to access the model directly
       self.class.class_eval do
-        define_method(:todo) { @model } if @model.is_a?(Sequel::Model)
+        define_method(@model_name.to_sym) { @model } if @model.is_a?(Sequel::Model)
       end
 
       # Then define methods for all model attributes
