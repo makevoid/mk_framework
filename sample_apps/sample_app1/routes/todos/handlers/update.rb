@@ -3,7 +3,10 @@
 class TodosUpdateHandler < MK::Handler
   route do |r|
     success do |r|
-      model.to_hash
+      {
+        message: "Todo updated",
+        todo: model.to_hash,
+      } 
     end
 
     error do |r|

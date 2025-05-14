@@ -2,11 +2,6 @@
 
 class TodosDeleteHandler < MK::Handler
   route do |r|
-    if model.nil?
-      r.response.status = 404
-      return { error: "Todo not found" }
-    end
-    
     todo_info = model.to_hash
     
     if model.delete

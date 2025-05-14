@@ -2,10 +2,8 @@
 
 class TodosIndexHandler < MK::Handler
   route do |r|
-    if model.empty?
-      []
-    else
-      model.map(&:to_hash)
-    end
+    # TODO: change model to resource in index route
+  
+    model.map(&:to_hash)
   end
 end

@@ -4,7 +4,7 @@ class TodosUpdateController < MK::Controller
   route do |r|
     todo = Todo[r.params.fetch('id')]
 
-    r.halt(404, { message: "not found" }) if todo.nil?
+    r.halt(404, { message: "todo not found" }) if todo.nil?
 
     params = r.params
 
