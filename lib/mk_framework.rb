@@ -107,11 +107,11 @@ module MK
 
           # Show, Update, Delete routes
           r.on String do |id|
+            r.params['id'] = id
+
             r.is do
               # Store id in params
-              r.params['id'] = id
 
-              # Show route
               r.get do
                 controller_name = "#{resource_name.capitalize}ShowController"
                 handler_name = "#{resource_name.capitalize}ShowHandler"
@@ -128,29 +128,9 @@ module MK
                 end
               end
 
-              # Update route
-              r.is do
-                r.post do
-                  controller_name = "#{resource_name.capitalize}UpdateController"
-                  handler_name = "#{resource_name.capitalize}UpdateHandler"
-
-                  if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
-                    controller = Object.const_get(controller_name).new
-                    result = controller.execute(r)
-
-                    handler = Object.const_get(handler_name).new(result)
-                    handler.execute(r)
-                  else
-                    response.status = 404
-                    { error: "Route not implemented" }
-                  end
-                end
-              end
-
-              # Delete route
-              r.post "delete" do
-                controller_name = "#{resource_name.capitalize}DeleteController"
-                handler_name = "#{resource_name.capitalize}DeleteHandler"
+              r.post do
+                controller_name = "#{resource_name.capitalize}UpdateController"
+                handler_name = "#{resource_name.capitalize}UpdateHandler"
 
                 if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
                   controller = Object.const_get(controller_name).new
@@ -162,6 +142,23 @@ module MK
                   response.status = 404
                   { error: "Route not implemented" }
                 end
+              end
+            end
+
+            # Delete route
+            r.post "delete" do
+              controller_name = "#{resource_name.capitalize}DeleteController"
+              handler_name = "#{resource_name.capitalize}DeleteHandler"
+
+              if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
+                controller = Object.const_get(controller_name).new
+                result = controller.execute(r)
+
+                handler = Object.const_get(handler_name).new(result)
+                handler.execute(r)
+              else
+                response.status = 404
+                { error: "Route not implemented" }
               end
             end
           end
