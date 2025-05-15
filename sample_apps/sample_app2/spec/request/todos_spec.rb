@@ -13,11 +13,10 @@ describe "Todos" do
 
         expect(last_response.status).to eq(201)
         
-        json_response = JSON.parse(last_response.body)
-        expect(json_response['message']).to eq("Todo created")
-        expect(json_response['todo']['title']).to eq("Test Todo")
-        expect(json_response['todo']['description']).to eq("This is a test todo")
-        expect(json_response['todo']['completed']).to eq(false)
+        expect(resp['message']).to eq("Todo created")
+        expect(last_response_json['todo']['title']).to eq("Test Todo")
+        expect(last_response_json['todo']['description']).to eq("This is a test todo")
+        expect(last_response_json['todo']['completed']).to eq(false)
       end
     end
     
@@ -29,9 +28,8 @@ describe "Todos" do
         
         expect(last_response.status).to eq(422)
         
-        json_response = JSON.parse(last_response.body)
-        expect(json_response['error']).to eq("Validation failed")
-        expect(json_response['details']).to have_key('title')
+        expect(last_response_json['error']).to eq("Validation failed")
+        expect(last_response_json['details']).to have_key('title')
       end
       
       it "returns validation errors when title is too long" do
@@ -42,9 +40,8 @@ describe "Todos" do
         
         expect(last_response.status).to eq(422)
         
-        json_response = JSON.parse(last_response.body)
-        expect(json_response['error']).to eq("Validation failed")
-        expect(json_response['details']).to have_key('title')
+        expect(last_response_json['error']).to eq("Validation failed")
+        expect(last_response_json['details']).to have_key('title')
       end
     end
   end
