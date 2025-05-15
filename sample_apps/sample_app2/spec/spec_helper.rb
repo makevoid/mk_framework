@@ -7,10 +7,16 @@ require "json"
 # Load the application
 require_relative '../app'
 
+class StrictHash < Hash
+  def [](key)
+    fetch(key)  # This will raise KeyError if key doesn't exist
+  end
+end
+
 module MK::Framework::Spec
   def resp
     @last_json ||= {}
-    @last_json[last_response.object_id] ||= JSON.parse(last_response.body)
+    @last_json[last_response.object_id] ||= StrictHash.new JSON.parse(last_response.body)
   end
   
   # Clear the cached JSON when a new request is made
