@@ -2,14 +2,14 @@
 
 class PostsDeleteHandler < MK::Handler
   route do |r|
-    post_info = model.to_hash
-    
-    if model.delete
+    success do |r|
       {
         message: "Post deleted successfully",
-        post: post_info
+        post: model.to_hash
       }
-    else
+    end
+
+    error do |r|
       r.response.status = 500
       {
         error: "Failed to delete post"

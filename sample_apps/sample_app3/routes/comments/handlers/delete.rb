@@ -2,9 +2,18 @@
 
 class CommentsDeleteHandler < MK::Handler
   route do |r|
-    {
-      message: "Comment deleted successfully",
-      comment: model
-    }
+    success do |r|
+      {
+        message: "Comment deleted successfully",
+        comment: model.to_hash
+      }
+    end
+
+    error do |r|
+      r.response.status = 500
+      {
+        error: "Failed to delete comment"
+      }
+    end
   end
 end
