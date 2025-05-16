@@ -340,6 +340,9 @@ module MK
         rescue StandardError => e
           # Handle other errors
           r.response.status = 500
+          puts "ERROR:"
+          puts e.message
+          puts e.backtrace.join("\n")
           return {
             error: "Server error",
             message: e.message
