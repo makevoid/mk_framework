@@ -329,10 +329,19 @@ module MK
               instance_exec(r, &@fail_block)
             end
           else
-            if model.delete
-              instance_exec(r, &@success_block)
+            if model.is_a?(Sequel::Model)
+              if model.delete
+                instance_exec(r, &@success_block)
+              else
+                instance_exec(r, &@fail_block)
+              end
             else
-              instance_exec(r, &@fail_block)
+              puts "ERROR"
+              puts "You need to return a sequel model from the DeleteController"
+              return {
+                error: "Server error",
+                message: "Internal resource error"
+              }
             end
           end
         rescue Sequel::ValidationFailed => e
