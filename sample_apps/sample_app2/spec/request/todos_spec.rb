@@ -243,7 +243,7 @@ describe "Todos" do
         delete "/todos/999999"
 
         expect(last_response.status).to eq 404
-        expect(resp).to be_empty
+        expect(resp[:error]).to eq "Todo not found"
       end
     end
   end
