@@ -209,4 +209,42 @@ describe "Todos" do
       end
     end
   end
+
+  describe "DELETE /todos/:id" do
+    before do
+      Todo.dataset.delete
+
+      @todo = Todo.create(
+        title: "Todo to Delete",
+        description: "This todo will be deleted",
+        completed: false
+      )
+    end
+
+    context "when todo exists" do
+      it "deletes the todo" do
+        post "/todos/#{@todo.id}/delete"
+
+        expect(last_response.status).to eq 200
+
+        expect(resp[:message]).to eq "Todo deleted successfully"
+        expect(resp[:todo][:id]).to eq @todo.id
+        expect(resp[:todo][:title]).to eq "Todo to Delete"
+        expect(resp[:todo][:description]).to eq "This todo will be deleted"
+        expect(resp[:todo][:completed]).to eq false
+
+        # Verify that the todo was actually deleted from the database
+        expect(Todo[@todo.id]).to be_nil
+      end
+    end
+
+    context "when todo does not exist" do
+      it "returns a 404 error" do
+        delete "/todos/999999"
+
+        expect(last_response.status).to eq 404
+        expect(resp).to be_empty
+      end
+    end
+  end
 end

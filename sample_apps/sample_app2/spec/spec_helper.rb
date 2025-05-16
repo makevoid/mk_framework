@@ -43,6 +43,7 @@ module MK::Framework::Spec
   end
 
   def parse_response_body(response_body)
+    return StrictHash.new if response_body.nil? || response_body.empty?
     response_body = JSON.parse(response_body)
     case response_body
     when Hash
