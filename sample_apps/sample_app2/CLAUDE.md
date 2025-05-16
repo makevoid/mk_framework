@@ -26,3 +26,11 @@
 - UPDATE operations use POST to "/:resource/:id" instead of PUT/PATCH
 - Test both standard (delete "/todos/:id") and framework-specific (post "/todos/:id/delete") methods
 - Do not standardize HTTP methods across tests as this dual approach validates both patterns
+
+## Route Structure
+- Framework uses a consistent RESTful routing pattern similar to Ruby on Rails and Sinatra:
+  - GET /todos - index (list all)
+  - GET /todos/:id - show (get one)
+  - POST /todos - create
+  - POST /todos/:id - update
+  - POST /todos/:id/delete - delete
