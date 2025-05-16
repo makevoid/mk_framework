@@ -213,11 +213,11 @@ describe "Comments" do
     end
 
     it "returns a 404 error for a non-existent comment" do
-      delete "/comments/999999"
+      post "/comments/999999/delete"
 
       expect(last_response.status).to eq 404
       expect(resp).to have_key :error
-      expect(resp[:error]).to eq "Route not implemented"
+      expect(resp[:error]).to eq "Comment not found"
     end
   end
 end

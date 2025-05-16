@@ -2,10 +2,10 @@
 
 class CardsDeleteHandler < MK::Handler
   route do |r|
-    response.status = 200
+    r.response.status = 200
     {
       message: "Card deleted successfully",
-      card: controller_result.values
-    }.to_json
+      card: model.values
+    }
   end
 end

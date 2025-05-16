@@ -32,6 +32,9 @@ describe "Cards" do
 
       expect(last_response.status).to eq 200
 
+      expect(last_response.body).to be_a Hash
+      expect(resp).to be_a Hash
+      expect(resp[:cards]).to be_a Array
       expect(resp[:cards].length).to eq 3
 
       expect(resp[:cards][0][:id]).to eq @card1.id
@@ -323,7 +326,7 @@ describe "Cards" do
         delete "/cards/999999"
 
         expect(last_response.status).to eq 404
-        expect(resp[:error]).to eq "Comment not found"
+        expect(resp[:error]).to eq "Card not found"
       end
     end
   end

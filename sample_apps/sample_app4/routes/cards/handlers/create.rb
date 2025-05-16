@@ -2,22 +2,21 @@
 
 class CardsCreateHandler < MK::Handler
   route do |r|
-    card = controller_result
+    card = model
 
     unless card.valid?
-      response.status = 422
-      return {
+      r.halt 422, {
         error: "Validation failed",
         details: card.errors
-      }.to_json
+      }
     end
 
     card.save
 
-    response.status = 201
+    r.response.status = 201
     {
       message: "Card created",
       card: card.values
-    }.to_json
+    }
   end
 end

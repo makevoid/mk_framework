@@ -2,11 +2,11 @@
 
 class CardsShowHandler < MK::Handler
   route do |r|
-    result = controller_result
+    result = model
 
     {
       card: result[:card].values,
       comments: result[:comments].map(&:values)
-    }.to_json
+    }
   end
 end

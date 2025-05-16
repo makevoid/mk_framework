@@ -20,7 +20,15 @@ module MK
     # plugin :error_handler
 
     not_found do
-      { error: "Route not implemented" }
+      path = self.request.path
+      path_split = path.split "/"
+      resource = path_split[1]
+      if resource && !resource.empty?
+        resource_name = singularize resource.capitalize
+        { error: "#{resource_name} not found" }
+      else
+        { error: "Not Found" }
+      end
     end
 
     # Class attribute to store routes path
@@ -99,7 +107,7 @@ module MK
                 handler.execute(r)
               else
                 response.status = 404
-                { error: "Route not implemented" }
+                { error: "#{handler_name} Not Found" }
               end
             end
 
@@ -117,7 +125,7 @@ module MK
                 handler.execute(r)
               else
                 response.status = 404
-                { error: "Route not implemented" }
+                { error: "#{handler_name} Not Found" }
               end
             end
           end
@@ -148,7 +156,7 @@ module MK
                         handler.execute(r)
                       else
                         response.status = 404
-                        { error: "Route not implemented" }
+                        { error: "#{handler_name} Not Found" }
                       end
                     end
 
@@ -168,7 +176,7 @@ module MK
                         handler.execute(r)
                       else
                         response.status = 404
-                        { error: "Route not implemented" }
+                        { error: "#{handler_name} Not Found" }
                       end
                     end
                   end
@@ -193,7 +201,7 @@ module MK
                   handler.execute(r)
                 else
                   response.status = 404
-                  { error: "Route not implemented" }
+                  { error: "#{handler_name} Not Found" }
                 end
               end
 
@@ -210,7 +218,7 @@ module MK
                   handler.execute(r)
                 else
                   response.status = 404
-                  { error: "Route not implemented" }
+                  { error: "#{handler_name} Not Found" }
                 end
               end
             end
@@ -229,7 +237,7 @@ module MK
                 handler.execute(r)
               else
                 response.status = 404
-                { error: "Route not implemented" }
+                { error: "#{handler_name} Not Found" }
               end
             end
           end

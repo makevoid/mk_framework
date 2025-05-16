@@ -54,3 +54,4 @@
 ## Attention to Code
 - Be sure that the handlers and controllers are implementing Roda route blocks (```route do |r|```) - e.g. ```class SampleIndexHandler < MK::Handler``` and ```route do |r|```.
 - Make sure `response` in controller and handler is always `r.response` as it's a Roda resource
+- Do not use `.to_json` to respond json in the handles, Roda :json plugin

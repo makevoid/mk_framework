@@ -244,11 +244,11 @@ describe "Posts" do
 
     context "when post does not exist" do
       it "returns a 404 error" do
-        delete "/posts/999999"
+        post "/posts/999999/delete"
 
         expect(last_response.status).to eq 404
         expect(resp).to have_key :error
-        expect(resp[:error]).to eq "Route not implemented"
+        expect(resp[:error]).to eq "Post not found"
       end
     end
   end
