@@ -10,7 +10,6 @@
 - NEVER run the server directly with `rackup` or `bundle exec rackup`
 - Always use RSpec for testing and debugging
 - Use `bundle exec rspec` to run all tests
-- Use `bundle exec rspec spec/request/posts_spec.rb` to test specific endpoints
 
 ## Code Style
 - Include `# frozen_string_literal: true` at the top of each Ruby file
@@ -43,7 +42,7 @@
 ## Custom Routes
 - For endpoints that don't follow the standard RESTful pattern, use custom routes in the app.rb file
 - Custom routes are defined in the routing method of the application class
-- Register routes using the register_route method with the format: 
+- Register routes using the register_route method with the format:
   `register_route :method, "/path", "ResourceName", "ActionName", "controller_path", "handler_path"`
 
 ## Nested Resources
