@@ -291,7 +291,7 @@ module MK
 
       # If the result is a raw model (for index/show actions)
       if model && (self.class.name.end_with?('IndexHandler') || self.class.name.end_with?('ShowHandler'))
-        return model.respond_to?(:map) ? model.map(&:to_hash) : model.to_hash
+        return serialize(model)
       end
 
       # For other cases (create, update, delete with success/failure blocks)
@@ -319,6 +319,24 @@ module MK
     end
 
     private
+    
+    # Recursively serialize objects to JSON-compatible hashes
+    def serialize(obj)
+      case obj
+      when Sequel::Model
+        obj.to_hash
+      when Hash
+        result = {}
+        obj.each do |key, value|
+          result[key] = serialize(value)
+        end
+        result
+      when Array
+        obj.map { |item| serialize(item) }
+      else
+        obj
+      end
+    end
 
     # Define accessors for model object dynamically using define_method
     def define_model_accessors
