@@ -22,7 +22,7 @@ module SymbolizeHelper
 
   def map_value(thing)
     case thing
-    when Hash
+    when Hash, StrictHash
       symbolize_recursive(thing)
     when Array
       thing.map { |v| map_value(v) }
@@ -39,7 +39,19 @@ module MK::Framework::Spec
   include SymbolizeHelper
 
   def resp
-    @last_json ||= StrictHash[ symbolize_recursive JSON.parse(last_response.body) ]
+    @last_json ||= parse_response_body last_response.body
+  end
+
+  def parse_response_body(response_body)
+    response_body = JSON.parse(response_body)
+    case response_body
+    when Hash
+      StrictHash[ symbolize_recursive response_body ]
+    when Array
+      response_body.map { |value| StrictHash[ symbolize_recursive value ] }
+    else
+      response_body
+    end
   end
 
   include Rack::Test::Methods
