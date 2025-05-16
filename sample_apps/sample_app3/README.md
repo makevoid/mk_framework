@@ -1,6 +1,6 @@
-# Todo List API
+# Blog Post API
 
-A RESTful API for managing todo items built with the MK Framework, a lightweight Ruby web framework based on Roda.
+A RESTful API for managing blog posts built with the MK Framework, a lightweight Ruby web framework based on Roda.
 
 ## Overview
 
@@ -12,7 +12,7 @@ This application demonstrates a clean separation of concerns with a RESTful arch
 
 ## Features
 
-- Create, read, update and delete todo items
+- Create, read, update and delete blog posts
 - Input validation
 - JSON response formatting
 - SQLite database storage
@@ -23,7 +23,7 @@ This application demonstrates a clean separation of concerns with a RESTful arch
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd sample_app2
+cd sample_app3
 
 # Install dependencies
 bundle install
@@ -38,18 +38,18 @@ The server will start on http://localhost:9292
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/todos` | GET | List all todos |
-| `/todos/:id` | GET | Get a specific todo |
-| `/todos` | POST | Create a new todo |
-| `/todos/:id` | POST | Update a todo |
-| `/todos/:id/delete` | POST | Delete a todo |
+| `/posts` | GET | List all posts |
+| `/posts/:id` | GET | Get a specific post |
+| `/posts` | POST | Create a new post |
+| `/posts/:id` | POST | Update a post |
+| `/posts/:id/delete` | POST | Delete a post |
 
 ### Request/Response Examples
 
-#### List all todos
+#### List all posts
 
 ```
-GET /todos
+GET /posts
 ```
 
 Response:
@@ -57,103 +57,110 @@ Response:
 [
   {
     "id": 1,
-    "title": "Buy groceries",
-    "description": "Milk, eggs, bread",
-    "completed": false,
+    "title": "First Blog Post",
+    "description": "This is the content of my first blog post",
     "created_at": "2023-01-01T12:00:00Z",
     "updated_at": "2023-01-01T12:00:00Z"
   },
   {
     "id": 2,
-    "title": "Finish project",
-    "description": "Complete the todo API",
-    "completed": true,
+    "title": "Second Blog Post",
+    "description": "This is the content of my second blog post",
     "created_at": "2023-01-02T10:00:00Z",
     "updated_at": "2023-01-02T15:30:00Z"
   }
 ]
 ```
 
-#### Get a specific todo
+#### Get a specific post
 
 ```
-GET /todos/1
+GET /posts/1
 ```
 
 Response:
 ```json
 {
   "id": 1,
-  "title": "Buy groceries",
-  "description": "Milk, eggs, bread",
-  "completed": false,
+  "title": "First Blog Post",
+  "description": "This is the content of my first blog post",
   "created_at": "2023-01-01T12:00:00Z",
   "updated_at": "2023-01-01T12:00:00Z"
 }
 ```
 
-#### Create a new todo
+#### Create a new post
 
 ```
-POST /todos
-```
-
-Request body:
-```json
-{
-  "title": "Learn Ruby",
-  "description": "Study MK Framework",
-  "completed": false
-}
-```
-
-Response:
-```json
-{
-  "id": 3,
-  "title": "Learn Ruby",
-  "description": "Study MK Framework",
-  "completed": false,
-  "created_at": "2023-01-03T09:00:00Z",
-  "updated_at": "2023-01-03T09:00:00Z"
-}
-```
-
-#### Update a todo
-
-```
-POST /todos/1
+POST /posts
 ```
 
 Request body:
 ```json
 {
-  "completed": true
+  "title": "New Blog Post",
+  "description": "This is the content of my new blog post"
 }
 ```
 
 Response:
 ```json
 {
-  "id": 1,
-  "title": "Buy groceries",
-  "description": "Milk, eggs, bread",
-  "completed": true,
-  "created_at": "2023-01-01T12:00:00Z",
-  "updated_at": "2023-01-03T14:00:00Z"
+  "message": "Post created",
+  "post": {
+    "id": 3,
+    "title": "New Blog Post",
+    "description": "This is the content of my new blog post",
+    "created_at": "2023-01-03T09:00:00Z",
+    "updated_at": "2023-01-03T09:00:00Z"
+  }
 }
 ```
 
-#### Delete a todo
+#### Update a post
 
 ```
-POST /todos/1/delete
+POST /posts/1
+```
+
+Request body:
+```json
+{
+  "title": "Updated Blog Post Title"
+}
 ```
 
 Response:
 ```json
 {
-  "success": true
+  "message": "Post updated",
+  "post": {
+    "id": 1,
+    "title": "Updated Blog Post Title",
+    "description": "This is the content of my first blog post",
+    "created_at": "2023-01-01T12:00:00Z",
+    "updated_at": "2023-01-03T14:00:00Z"
+  }
+}
+```
+
+#### Delete a post
+
+```
+POST /posts/1/delete
+```
+
+Response:
+```json
+{
+  "message": "Post deleted successfully",
+  "post": {
+    "id": 1,
+    "title": "First Blog Post",
+    "description": "This is the content of my first blog post",
+    "created_at": "2023-01-01T12:00:00Z",
+    "updated_at": "2023-01-01T12:00:00Z"
+  }
 }
 ```
 
@@ -161,9 +168,9 @@ Response:
 
 The application follows a structured architecture:
 
-1. **Models** (`models/todo.rb`): Define the data schema and validation rules
-2. **Controllers** (`routes/todos/controllers/`): Handle business logic and data operations
-3. **Handlers** (`routes/todos/handlers/`): Format responses and set HTTP status codes
+1. **Models** (`models/post.rb`): Define the data schema and validation rules
+2. **Controllers** (`routes/posts/controllers/`): Handle business logic and data operations
+3. **Handlers** (`routes/posts/handlers/`): Format responses and set HTTP status codes
 4. **Application** (`app.rb`): Configure the database and set up the application
 
 ## Testing
