@@ -19,7 +19,7 @@ describe "Cards" do
         description: "This is the second kanban card",
         status: "in_progress"
       )
-      
+
       @card3 = Card.create(
         title: "Third Card",
         description: "This is the third kanban card",
@@ -43,7 +43,7 @@ describe "Cards" do
       expect(resp[:cards][1][:title]).to eq "Second Card"
       expect(resp[:cards][1][:description]).to eq "This is the second kanban card"
       expect(resp[:cards][1][:status]).to eq "in_progress"
-      
+
       expect(resp[:cards][2][:id]).to eq @card3.id
       expect(resp[:cards][2][:title]).to eq "Third Card"
       expect(resp[:cards][2][:description]).to eq "This is the third kanban card"
@@ -61,13 +61,13 @@ describe "Cards" do
         description: "This is a test kanban card",
         status: "todo"
       )
-      
+
       @comment1 = Comment.create(
         card_id: @card.id,
         content: "First comment",
         author: "Alice"
       )
-      
+
       @comment2 = Comment.create(
         card_id: @card.id,
         content: "Second comment",
@@ -86,14 +86,14 @@ describe "Cards" do
         expect(resp[:card][:title]).to eq "Test Card"
         expect(resp[:card][:description]).to eq "This is a test kanban card"
         expect(resp[:card][:status]).to eq "todo"
-        
+
         # Check comments
         expect(resp[:comments].length).to eq 2
-        
+
         expect(resp[:comments][0][:id]).to eq @comment1.id
         expect(resp[:comments][0][:content]).to eq "First comment"
         expect(resp[:comments][0][:author]).to eq "Alice"
-        
+
         expect(resp[:comments][1][:id]).to eq @comment2.id
         expect(resp[:comments][1][:content]).to eq "Second comment"
         expect(resp[:comments][1][:author]).to eq "Bob"
@@ -115,7 +115,7 @@ describe "Cards" do
       Comment.dataset.delete
       Card.dataset.delete
     end
-    
+
     context "with valid parameters" do
       it "creates a new card" do
         post '/cards', {
@@ -131,7 +131,7 @@ describe "Cards" do
         expect(resp[:card][:description]).to eq "This is a test kanban card"
         expect(resp[:card][:status]).to eq "todo"
       end
-      
+
       it "creates a new card with default status" do
         post '/cards', {
           title: "Test Card",
@@ -170,7 +170,7 @@ describe "Cards" do
         expect(resp[:error]).to eq "Validation failed"
         expect(resp[:details]).to have_key :title
       end
-      
+
       it "returns validation errors when status is invalid" do
         post '/cards', {
           title: "Test Card",
@@ -226,7 +226,7 @@ describe "Cards" do
         expect(resp[:card][:description]).to eq "Original Description"
         expect(resp[:card][:status]).to eq "in_progress"
       end
-      
+
       it "moves a card to done" do
         post "/cards/#{@card.id}", {
           status: "done"
@@ -265,7 +265,7 @@ describe "Cards" do
         expect(resp[:error]).to eq "Validation failed!"
         expect(resp[:details]).to have_key :title
       end
-      
+
       it "returns validation errors when status is invalid" do
         post "/cards/#{@card.id}", {
           status: "invalid_status"
@@ -323,7 +323,7 @@ describe "Cards" do
         delete "/cards/999999"
 
         expect(last_response.status).to eq 404
-        expect(resp).to be_empty
+        expect(resp[:error]).to eq "Comment not found"
       end
     end
   end

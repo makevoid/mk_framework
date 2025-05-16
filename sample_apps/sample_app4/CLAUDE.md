@@ -10,6 +10,7 @@
 - NEVER run the server directly with `rackup` or `bundle exec rackup`
 - Always use RSpec for testing and debugging
 - Use `bundle exec rspec` to run all tests
+- Use `bundle exec rspec spec/request/posts_spec.rb` to test specific endpoints
 
 ## Code Style
 - Include `# frozen_string_literal: true` at the top of each Ruby file
@@ -49,3 +50,7 @@
 - For nested resources like comments, use routes like `/posts/:post_id/comments`
 - Create dedicated controllers and handlers for these nested resources
 - Make sure to validate the parent resource existence in the controller
+
+## Attention to Code
+- Be sure that the handlers and controllers are implementing Roda route blocks (```route do |r|```) - e.g. ```class SampleIndexHandler < MK::Handler``` and ```route do |r|```.
+- Make sure `response` in controller and handler is always `r.response` as it's a Roda resource

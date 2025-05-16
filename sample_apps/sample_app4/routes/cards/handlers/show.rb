@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 class CardsShowHandler < MK::Handler
-  def call
+  route do |r|
     result = controller_result
-    
+
     {
       card: result[:card].values,
       comments: result[:comments].map(&:values)

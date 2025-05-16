@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 class CardsCreateHandler < MK::Handler
-  def call
+  route do |r|
     card = controller_result
-    
+
     unless card.valid?
       response.status = 422
       return {
@@ -11,9 +11,9 @@ class CardsCreateHandler < MK::Handler
         details: card.errors
       }.to_json
     end
-    
+
     card.save
-    
+
     response.status = 201
     {
       message: "Card created",

@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 class CardsIndexHandler < MK::Handler
-  def call
+  route do |r|
     { 
-      cards: controller_result.map(&:values)
-    }.to_json
+      cards: model.map(&:values)
+    }
   end
 end

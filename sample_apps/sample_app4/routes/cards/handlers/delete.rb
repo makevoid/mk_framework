@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class CardsDeleteHandler < MK::Handler
-  def call
+  route do |r|
     response.status = 200
     {
       message: "Card deleted successfully",
