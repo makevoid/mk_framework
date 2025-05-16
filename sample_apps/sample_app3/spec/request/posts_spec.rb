@@ -45,13 +45,13 @@ describe "Posts" do
         title: "Test Post",
         description: "This is a test blog post"
       )
-      
+
       @comment1 = Comment.create(
         post_id: @post.id,
         content: "First comment",
         author: "Alice"
       )
-      
+
       @comment2 = Comment.create(
         post_id: @post.id,
         content: "Second comment",
@@ -69,14 +69,14 @@ describe "Posts" do
         expect(resp[:post][:id]).to eq @post.id
         expect(resp[:post][:title]).to eq "Test Post"
         expect(resp[:post][:description]).to eq "This is a test blog post"
-        
+
         # Check comments
         expect(resp[:comments].length).to eq 2
-        
+
         expect(resp[:comments][0][:id]).to eq @comment1.id
         expect(resp[:comments][0][:content]).to eq "First comment"
         expect(resp[:comments][0][:author]).to eq "Alice"
-        
+
         expect(resp[:comments][1][:id]).to eq @comment2.id
         expect(resp[:comments][1][:content]).to eq "Second comment"
         expect(resp[:comments][1][:author]).to eq "Bob"
@@ -247,7 +247,8 @@ describe "Posts" do
         delete "/posts/999999"
 
         expect(last_response.status).to eq 404
-        expect(resp).to be_empty
+        expect(resp).to have_key :error
+        expect(resp[:error]).to eq "Route not implemented"
       end
     end
   end
