@@ -118,15 +118,16 @@ module MK
             r.params['id'] = id
 
             # Handle nested resources first
-            if nested_resources[resource_name] && !nested_resources[resource_name].empty?
-              nested_resources[resource_name].each do |nested_resource|
+            nr = self.class.nested_resources || {}
+            if nr[resource_name] && !nr[resource_name].empty?
+              nr[resource_name].each do |nested_resource|
                 r.on nested_resource do
                   # GET /resource/:id/nested_resource - Index of nested resources
                   r.is do
                     r.get do
                       controller_name = "#{nested_resource.capitalize}IndexController"
                       handler_name = "#{nested_resource.capitalize}IndexHandler"
-                      param_name = "#{singularize resource_name}_id"
+                      param_name = "#{singularize(resource_name)}_id"
                       r.params[param_name] = id
 
                       if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
@@ -145,7 +146,7 @@ module MK
                     r.post do
                       controller_name = "#{nested_resource.capitalize}CreateController"
                       handler_name = "#{nested_resource.capitalize}CreateHandler"
-                      param_name = "#{singularize resource_name}_id"
+                      param_name = "#{singularize(resource_name)}_id"
                       r.params[param_name] = id
 
                       if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)

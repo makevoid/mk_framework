@@ -7,11 +7,13 @@ class CommentsCreateController < MK::Controller
     
     r.halt(404, { error: "Post not found" }.to_json) unless post
     
-    comment = Comment.new(
-      post_id: post_id,
-      content: r.params.fetch('content'),
-      author: r.params['author']
-    )
+    comment_params = { post_id: post_id }
+    
+    # Optional fields - content is required by model validation
+    comment_params[:content] = r.params['content'] if r.params['content']
+    comment_params[:author] = r.params['author'] if r.params['author']
+    
+    comment = Comment.new(comment_params)
     
     unless comment.valid?
       r.halt(422, { 
