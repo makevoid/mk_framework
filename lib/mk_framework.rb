@@ -16,6 +16,12 @@ module MK
     plugin :json
     plugin :json_parser
     plugin :halt
+    plugin :not_found
+    # plugin :error_handler
+
+    not_found do
+      { error: "Route not implemented" }
+    end
 
     # Class attribute to store routes path
     class << self
@@ -70,6 +76,7 @@ module MK
       # Get the current route block
       current_route_block = @route_block
 
+
       # Create a new route block that includes our resource routes
       route do |r|
         # First evaluate the existing routes
@@ -85,6 +92,7 @@ module MK
 
               if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
                 controller = Object.const_get(controller_name).new
+                # puts "Controller: #{controller_name} -- Handler: #{handler_name}" # DEBUG
                 result = controller.execute(r)
 
                 handler = Object.const_get(handler_name).new(result)
@@ -102,6 +110,7 @@ module MK
 
               if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
                 controller = Object.const_get(controller_name).new
+                # puts "Controller: #{controller_name} -- Handler: #{handler_name}" # DEBUG
                 result = controller.execute(r)
 
                 handler = Object.const_get(handler_name).new(result)
@@ -131,6 +140,7 @@ module MK
                       r.params[param_name] = id
 
                       if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
+                        # puts "Controller: #{controller_name} -- Handler: #{handler_name}" # DEBUG
                         controller = Object.const_get(controller_name).new
                         result = controller.execute(r)
 
@@ -150,6 +160,7 @@ module MK
                       r.params[param_name] = id
 
                       if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
+                        # puts "Controller: #{controller_name} -- Handler: #{handler_name}" # DEBUG
                         controller = Object.const_get(controller_name).new
                         result = controller.execute(r)
 
@@ -174,6 +185,7 @@ module MK
                 handler_name = "#{resource_name.capitalize}ShowHandler"
 
                 if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
+                  # puts "Controller: #{controller_name} -- Handler: #{handler_name}" # DEBUG
                   controller = Object.const_get(controller_name).new
                   result = controller.execute(r)
 
@@ -190,6 +202,7 @@ module MK
                 handler_name = "#{resource_name.capitalize}UpdateHandler"
 
                 if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
+                  # puts "Controller: #{controller_name} -- Handler: #{handler_name}" # DEBUG
                   controller = Object.const_get(controller_name).new
                   result = controller.execute(r)
 
@@ -208,6 +221,7 @@ module MK
               handler_name = "#{resource_name.capitalize}DeleteHandler"
 
               if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
+                # puts "Controller: #{controller_name} -- Handler: #{handler_name}" # DEBUG
                 controller = Object.const_get(controller_name).new
                 result = controller.execute(r)
 
@@ -254,6 +268,7 @@ module MK
 
     class << self
       def route(&block)
+        # puts "DEFINING METHOD ROUTE BLOCK" # DEBUG
         define_method(:route_block) do
           block
         end
@@ -298,8 +313,10 @@ module MK
       if @success_block && @fail_block
         begin
           if model.save
+            # puts "SUCCESS" # DEBUG count successes
             instance_exec(r, &@success_block)
           else
+            # puts "FAIL" # DEBUG count fails
             instance_exec(r, &@fail_block)
           end
         rescue Sequel::ValidationFailed => e
@@ -319,7 +336,7 @@ module MK
     end
 
     private
-    
+
     # Recursively serialize objects to JSON-compatible hashes
     def serialize(obj)
       case obj
