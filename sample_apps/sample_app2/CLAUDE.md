@@ -19,3 +19,10 @@
 - Keep methods small and focused on a single responsibility
 - Explicit requires over autoloading
 - Use fetch for required parameters, direct access for optional ones
+
+## HTTP Method Conventions
+- Framework uses non-standard HTTP method conventions for some operations
+- DELETE operations use POST to "/:resource/:id/delete" instead of DELETE method
+- UPDATE operations use POST to "/:resource/:id" instead of PUT/PATCH
+- Test both standard (delete "/todos/:id") and framework-specific (post "/todos/:id/delete") methods
+- Do not standardize HTTP methods across tests as this dual approach validates both patterns
