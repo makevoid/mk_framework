@@ -39,6 +39,40 @@ describe "Todos" do
     end
   end
 
+  describe "GET /todos/:id" do
+    before do
+      Todo.dataset.delete
+
+      @todo = Todo.create(
+        title: "Test Todo",
+        description: "This is a test todo",
+        completed: false
+      )
+    end
+
+    context "when todo exists" do
+      it "returns the todo" do
+        get "/todos/#{@todo.id}"
+
+        expect(last_response.status).to eq 200
+
+        expect(resp[:id]).to eq @todo.id
+        expect(resp[:title]).to eq "Test Todo"
+        expect(resp[:description]).to eq "This is a test todo"
+        expect(resp[:completed]).to eq false
+      end
+    end
+
+    context "when todo does not exist" do
+      it "returns a 404 error" do
+        get "/todos/999999"
+
+        expect(last_response.status).to eq 404
+        expect(resp[:error]).to eq "Todo not found"
+      end
+    end
+  end
+
   describe "POST /todos" do
     context "with valid parameters" do
       it "creates a new todo" do
