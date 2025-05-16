@@ -72,7 +72,7 @@ RSpec.configure do |config|
   config.include Rack::Test::Methods
 
   def app
-    BlogApp.app
+    KanbanApp.app
   end
 
   config.include MK::Framework::Spec

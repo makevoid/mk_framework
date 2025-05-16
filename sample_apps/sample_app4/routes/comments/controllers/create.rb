@@ -2,12 +2,12 @@
 
 class CommentsCreateController < MK::Controller
   route do |r|
-    post_id = r.params.fetch('post_id')
-    post = Post[post_id]
+    card_id = r.params.fetch('card_id')
+    card = Card[card_id]
     
-    r.halt(404, { error: "Post not found" }.to_json) unless post
+    r.halt(404, { error: "Card not found" }.to_json) unless card
     
-    comment_params = { post_id: post_id }
+    comment_params = { card_id: card_id }
     
     # Optional fields - content is required by model validation
     comment_params[:content] = r.params['content'] if r.params['content']

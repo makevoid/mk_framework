@@ -1,21 +1,27 @@
-# Blog Post API with Comments
+# Kanban Board API with Cards and Comments
 
-A RESTful API for managing blog posts and comments built with the MK Framework, a lightweight Ruby web framework based on Roda.
+A RESTful API for managing a kanban board with cards and comments built with the MK Framework, a lightweight Ruby web framework based on Roda.
 
 ## Overview
 
-This application demonstrates a clean separation of concerns with a RESTful architecture:
+This application implements a simple kanban board with the following features:
+- Three fixed columns: "todo", "in_progress", and "done"
+- Cards with title, description, and status
+- Comments can be added to any card
+
+The application demonstrates a clean separation of concerns with a RESTful architecture:
 
 - **Controllers**: Handle data retrieval and business logic
 - **Handlers**: Format responses and set HTTP status codes
 - **Models**: Define data structure and validation rules
-- **Nested Resources**: Parent-child relationships between resources (posts and comments)
+- **Nested Resources**: Parent-child relationships between resources (cards and comments)
 
 ## Features
 
-- Create, read, update and delete blog posts
-- Add, view, edit and delete comments on posts
-- Nested resource structure (comments belong to posts)
+- Create, read, update and delete cards
+- Move cards between columns by updating their status
+- Add, view, edit and delete comments on cards
+- Nested resource structure (comments belong to cards)
 - Input validation on all resources
 - JSON response formatting
 - SQLite database storage
@@ -27,7 +33,7 @@ This application demonstrates a clean separation of concerns with a RESTful arch
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd sample_app3
+cd sample_app4
 
 # Install dependencies
 bundle install
@@ -42,86 +48,99 @@ IMPORTANT: Always use RSpec for testing and debugging rather than starting the s
 bundle exec rspec
 
 # Run specific test file
-bundle exec rspec spec/request/posts_spec.rb
+bundle exec rspec spec/request/cards_spec.rb
 ```
 
 ## API Endpoints
 
-### Posts Endpoints
+### Cards Endpoints
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/posts` | GET | List all posts |
-| `/posts/:id` | GET | Get a specific post with its comments |
-| `/posts` | POST | Create a new post |
-| `/posts/:id` | POST | Update a post |
-| `/posts/:id/delete` | POST | Delete a post |
+| `/cards` | GET | List all cards |
+| `/cards/:id` | GET | Get a specific card with its comments |
+| `/cards` | POST | Create a new card |
+| `/cards/:id` | POST | Update a card (including changing its status) |
+| `/cards/:id/delete` | POST | Delete a card |
 
 ### Comments Endpoints
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/posts/:post_id/comments` | GET | List all comments for a post |
-| `/posts/:post_id/comments` | POST | Create a new comment for a post |
+| `/cards/:card_id/comments` | GET | List all comments for a card |
+| `/cards/:card_id/comments` | POST | Create a new comment for a card |
 | `/comments/:id` | GET | Get a specific comment |
 | `/comments/:id` | POST | Update a comment |
 | `/comments/:id/delete` | POST | Delete a comment |
 
 ### Request/Response Examples
 
-#### List all posts
+#### List all cards
 
 ```
-GET /posts
-```
-
-Response:
-```json
-[
-  {
-    "id": 1,
-    "title": "First Blog Post",
-    "description": "This is the content of my first blog post",
-    "created_at": "2023-01-01T12:00:00Z",
-    "updated_at": "2023-01-01T12:00:00Z"
-  },
-  {
-    "id": 2,
-    "title": "Second Blog Post",
-    "description": "This is the content of my second blog post",
-    "created_at": "2023-01-02T10:00:00Z",
-    "updated_at": "2023-01-02T15:30:00Z"
-  }
-]
-```
-
-#### Get a specific post with comments
-
-```
-GET /posts/1
+GET /cards
 ```
 
 Response:
 ```json
 {
-  "post": {
+  "cards": [
+    {
+      "id": 1,
+      "title": "Implement authentication",
+      "description": "Add user login and registration",
+      "status": "todo",
+      "created_at": "2023-01-01T12:00:00Z",
+      "updated_at": "2023-01-01T12:00:00Z"
+    },
+    {
+      "id": 2,
+      "title": "Add dark mode support",
+      "description": "Implement dark mode for the UI",
+      "status": "in_progress",
+      "created_at": "2023-01-02T10:00:00Z",
+      "updated_at": "2023-01-02T15:30:00Z"
+    },
+    {
+      "id": 3,
+      "title": "Fix navigation bug",
+      "description": "Fix the issue with the sidebar navigation",
+      "status": "done",
+      "created_at": "2023-01-03T09:00:00Z",
+      "updated_at": "2023-01-03T14:00:00Z"
+    }
+  ]
+}
+```
+
+#### Get a specific card with comments
+
+```
+GET /cards/1
+```
+
+Response:
+```json
+{
+  "card": {
     "id": 1,
-    "title": "First Blog Post",
-    "description": "This is the content of my first blog post",
+    "title": "Implement authentication",
+    "description": "Add user login and registration",
+    "status": "todo",
     "created_at": "2023-01-01T12:00:00Z",
     "updated_at": "2023-01-01T12:00:00Z"
   },
   "comments": [
     {
       "id": 1,
-      "post_id": 1,
-      "content": "This is a great post!",
+      "card_id": 1,
+      "content": "We should use JWT for this",
       "author": "Alice",
       "created_at": "2023-01-01T14:00:00Z",
       "updated_at": "2023-01-01T14:00:00Z"
     },
     {
       "id": 2,
-      "post_id": 1,
-      "content": "I learned a lot from this",
+      "card_id": 1,
+      "content": "Let's add social login too",
       "author": "Bob",
       "created_at": "2023-01-01T15:30:00Z",
       "updated_at": "2023-01-01T15:30:00Z"
@@ -130,77 +149,81 @@ Response:
 }
 ```
 
-#### Create a new post
+#### Create a new card
 
 ```
-POST /posts
+POST /cards
 ```
 
 Request body:
 ```json
 {
-  "title": "New Blog Post",
-  "description": "This is the content of my new blog post"
+  "title": "Add image upload feature",
+  "description": "Implement image uploading for users",
+  "status": "todo"
 }
 ```
 
 Response:
 ```json
 {
-  "message": "Post created",
-  "post": {
+  "message": "Card created",
+  "card": {
+    "id": 4,
+    "title": "Add image upload feature",
+    "description": "Implement image uploading for users",
+    "status": "todo",
+    "created_at": "2023-01-04T09:00:00Z",
+    "updated_at": "2023-01-04T09:00:00Z"
+  }
+}
+```
+
+#### Update a card (moving to a different column)
+
+```
+POST /cards/1
+```
+
+Request body:
+```json
+{
+  "status": "in_progress"
+}
+```
+
+Response:
+```json
+{
+  "message": "Card updated",
+  "card": {
+    "id": 1,
+    "title": "Implement authentication",
+    "description": "Add user login and registration",
+    "status": "in_progress",
+    "created_at": "2023-01-01T12:00:00Z",
+    "updated_at": "2023-01-04T14:00:00Z"
+  }
+}
+```
+
+#### Delete a card
+
+```
+POST /cards/3/delete
+```
+
+Response:
+```json
+{
+  "message": "Card deleted successfully",
+  "card": {
     "id": 3,
-    "title": "New Blog Post",
-    "description": "This is the content of my new blog post",
+    "title": "Fix navigation bug",
+    "description": "Fix the issue with the sidebar navigation",
+    "status": "done",
     "created_at": "2023-01-03T09:00:00Z",
-    "updated_at": "2023-01-03T09:00:00Z"
-  }
-}
-```
-
-#### Update a post
-
-```
-POST /posts/1
-```
-
-Request body:
-```json
-{
-  "title": "Updated Blog Post Title"
-}
-```
-
-Response:
-```json
-{
-  "message": "Post updated",
-  "post": {
-    "id": 1,
-    "title": "Updated Blog Post Title",
-    "description": "This is the content of my first blog post",
-    "created_at": "2023-01-01T12:00:00Z",
     "updated_at": "2023-01-03T14:00:00Z"
-  }
-}
-```
-
-#### Delete a post
-
-```
-POST /posts/1/delete
-```
-
-Response:
-```json
-{
-  "message": "Post deleted successfully",
-  "post": {
-    "id": 1,
-    "title": "First Blog Post",
-    "description": "This is the content of my first blog post",
-    "created_at": "2023-01-01T12:00:00Z",
-    "updated_at": "2023-01-01T12:00:00Z"
   }
 }
 ```
@@ -210,15 +233,15 @@ Response:
 The application follows a structured architecture:
 
 1. **Models**:
-   - `models/post.rb`: Defines the post schema and validation rules
-   - `models/comment.rb`: Defines the comment schema and validation rules with relationship to posts
+   - `models/card.rb`: Defines the card schema and validation rules
+   - `models/comment.rb`: Defines the comment schema and validation rules with relationship to cards
 
 2. **Controllers**:
-   - `routes/posts/controllers/`: Handle post-related business logic
+   - `routes/cards/controllers/`: Handle card-related business logic
    - `routes/comments/controllers/`: Handle comment-related business logic
 
 3. **Handlers**:
-   - `routes/posts/handlers/`: Format post responses and set HTTP status codes
+   - `routes/cards/handlers/`: Format card responses and set HTTP status codes
    - `routes/comments/handlers/`: Format comment responses and set HTTP status codes
 
 4. **Application**:
@@ -246,12 +269,12 @@ The MK Framework has some unique conventions:
 - Nested resources are registered with the application using `register_nested_resource`
 - Complex object hierarchies are automatically serialized recursively
 
-### New Comment Examples
+### Comment Examples
 
-#### List comments for a post
+#### List comments for a card
 
 ```
-GET /posts/1/comments
+GET /cards/1/comments
 ```
 
 Response:
@@ -259,16 +282,16 @@ Response:
 [
   {
     "id": 1,
-    "post_id": 1,
-    "content": "This is a great post!",
+    "card_id": 1,
+    "content": "We should use JWT for this",
     "author": "Alice",
     "created_at": "2023-01-01T14:00:00Z",
     "updated_at": "2023-01-01T14:00:00Z"
   },
   {
     "id": 2,
-    "post_id": 1,
-    "content": "I learned a lot from this",
+    "card_id": 1,
+    "content": "Let's add social login too",
     "author": "Bob",
     "created_at": "2023-01-01T15:30:00Z",
     "updated_at": "2023-01-01T15:30:00Z"
@@ -276,16 +299,16 @@ Response:
 ]
 ```
 
-#### Create a comment on a post
+#### Create a comment on a card
 
 ```
-POST /posts/1/comments
+POST /cards/1/comments
 ```
 
 Request body:
 ```json
 {
-  "content": "Great article!",
+  "content": "This looks good to me",
   "author": "Charlie"
 }
 ```
@@ -296,11 +319,11 @@ Response:
   "message": "Comment created",
   "comment": {
     "id": 3,
-    "post_id": 1,
-    "content": "Great article!",
+    "card_id": 1,
+    "content": "This looks good to me",
     "author": "Charlie",
-    "created_at": "2023-01-03T09:00:00Z",
-    "updated_at": "2023-01-03T09:00:00Z"
+    "created_at": "2023-01-04T09:00:00Z",
+    "updated_at": "2023-01-04T09:00:00Z"
   }
 }
 ```
