@@ -115,4 +115,98 @@ describe "Todos" do
       end
     end
   end
+
+  describe "PUT /todos/:id" do
+    before do
+      Todo.dataset.delete
+
+      @todo = Todo.create(
+        title: "Original Title",
+        description: "Original Description",
+        completed: false
+      )
+    end
+
+    context "when todo exists" do
+      it "updates the todo title" do
+        post "/todos/#{@todo.id}", {
+          title: "Updated Title"
+        }
+
+        expect(last_response.status).to eq 200
+
+        expect(resp[:message]).to eq "Todo updated"
+        expect(resp[:todo][:id]).to eq @todo.id
+        expect(resp[:todo][:title]).to eq "Updated Title"
+        expect(resp[:todo][:description]).to eq "Original Description"
+        expect(resp[:todo][:completed]).to eq false
+      end
+
+      it "updates the todo description" do
+        post "/todos/#{@todo.id}", {
+          description: "Updated Description"
+        }
+
+        expect(last_response.status).to eq 200
+
+        expect(resp[:message]).to eq "Todo updated"
+        expect(resp[:todo][:id]).to eq @todo.id
+        expect(resp[:todo][:title]).to eq "Original Title"
+        expect(resp[:todo][:description]).to eq "Updated Description"
+        expect(resp[:todo][:completed]).to eq false
+      end
+
+      it "updates the todo completed status" do
+        post "/todos/#{@todo.id}", {
+          completed: true
+        }
+
+        expect(last_response.status).to eq 200
+
+        expect(resp[:message]).to eq "Todo updated"
+        expect(resp[:todo][:id]).to eq @todo.id
+        expect(resp[:todo][:title]).to eq "Original Title"
+        expect(resp[:todo][:description]).to eq "Original Description"
+        expect(resp[:todo][:completed]).to eq true
+      end
+
+      it "updates multiple fields at once" do
+        post "/todos/#{@todo.id}", {
+          title: "Completely Updated",
+          description: "New Description",
+          completed: true
+        }
+
+        expect(last_response.status).to eq 200
+
+        expect(resp[:message]).to eq "Todo updated"
+        expect(resp[:todo][:id]).to eq @todo.id
+        expect(resp[:todo][:title]).to eq "Completely Updated"
+        expect(resp[:todo][:description]).to eq "New Description"
+        expect(resp[:todo][:completed]).to eq true
+      end
+
+      it "returns validation errors when title is too long" do
+        post "/todos/#{@todo.id}", {
+          title: "X" * 101
+        }
+
+        expect(last_response.status).to eq 400
+
+        expect(resp[:error]).to eq "Validation failed!"
+        expect(resp[:details]).to have_key :title
+      end
+    end
+
+    context "when todo does not exist" do
+      it "returns a 404 error" do
+        post "/todos/999999", {
+          title: "Updated Title"
+        }
+
+        expect(last_response.status).to eq 404
+        expect(resp[:message]).to eq "todo not found"
+      end
+    end
+  end
 end
