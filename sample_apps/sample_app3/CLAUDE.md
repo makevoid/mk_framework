@@ -1,11 +1,16 @@
 # MK Framework Guidelines
 
 ## Commands
-- Run server: `bundle exec rackup`
 - Install dependencies: `bundle install`
 - Run tests: `bundle exec rspec`
 - Run single test: `bundle exec rspec spec/path/to/file_spec.rb:LINE_NUMBER`
 - Linting: `bundle exec rubocop`
+
+## IMPORTANT
+- NEVER run the server directly with `rackup` or `bundle exec rackup`
+- Always use RSpec for testing and debugging
+- Use `bundle exec rspec` to run all tests
+- Use `bundle exec rspec spec/request/posts_spec.rb` to test specific endpoints
 
 ## Code Style
 - Include `# frozen_string_literal: true` at the top of each Ruby file

@@ -27,12 +27,19 @@ cd sample_app3
 
 # Install dependencies
 bundle install
-
-# Start the server
-bundle exec rackup
 ```
 
-The server will start on http://localhost:9292
+## Development and Testing
+
+IMPORTANT: Always use RSpec for testing and debugging rather than starting the server directly:
+
+```bash
+# Run all tests
+bundle exec rspec
+
+# Run specific test file
+bundle exec rspec spec/request/posts_spec.rb
+```
 
 ## API Endpoints
 
