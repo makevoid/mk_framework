@@ -309,23 +309,31 @@ module MK
 
       # If the result is a model object, convert to hash (JSON-compatible)
       if result.is_a?(Sequel::Model)
-        return result.to_hash
+        return result
       end
 
       # If the result is a raw model (for index/show actions)
-      if model && (self.class.name.end_with?('IndexHandler') || self.class.name.end_with?('ShowHandler'))
-        return serialize(model)
+      if (self.class.name.end_with?('IndexHandler') || self.class.name.end_with?('ShowHandler'))
+        return result
       end
 
       # For other cases (create, update, delete with success/failure blocks)
       if @success_block && @fail_block
         begin
-          if model.save
-            # puts "SUCCESS" # DEBUG count successes
-            instance_exec(r, &@success_block)
+          unless self.class.name.end_with?('DeleteHandler')
+            if model.save
+              # puts "SUCCESS" # DEBUG count successes
+              instance_exec(r, &@success_block)
+            else
+              # puts "FAIL" # DEBUG count fails
+              instance_exec(r, &@fail_block)
+            end
           else
-            # puts "FAIL" # DEBUG count fails
-            instance_exec(r, &@fail_block)
+            if model.delete
+              instance_exec(r, &@success_block)
+            else
+              instance_exec(r, &@fail_block)
+            end
           end
         rescue Sequel::ValidationFailed => e
           instance_exec(r, &@fail_block)
@@ -338,8 +346,7 @@ module MK
           }
         end
       else
-        # Ensure we return a valid Roda response (String, Hash, Array)
-        result
+        raise "Success and Error blocks are required for create, update, and delete actions"
       end
     end
 
