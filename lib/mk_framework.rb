@@ -3,6 +3,12 @@
 require 'roda'
 require 'sequel'
 
+# TODO: REFACTOR THIS
+def singularize(str)
+  return str[0..-2] if str.end_with?('s')
+  str
+end
+
 module MK
   # Base MK application
   class Application < Roda
@@ -14,12 +20,14 @@ module MK
     # Class attribute to store routes path
     class << self
       attr_accessor :routes_path
+      attr_accessor :nested_resources
     end
 
     # Implement the Roda application pattern correctly
     def self.inherited(subclass)
       super
       subclass.routes_path = 'routes'
+      subclass.nested_resources = {}
 
       # Set up the default route block for the application
       subclass.route do |r|
@@ -109,6 +117,54 @@ module MK
           r.on String do |id|
             r.params['id'] = id
 
+            # Handle nested resources first
+            if nested_resources[resource_name] && !nested_resources[resource_name].empty?
+              nested_resources[resource_name].each do |nested_resource|
+                r.on nested_resource do
+                  # GET /resource/:id/nested_resource - Index of nested resources
+                  r.is do
+                    r.get do
+                      controller_name = "#{nested_resource.capitalize}IndexController"
+                      handler_name = "#{nested_resource.capitalize}IndexHandler"
+                      param_name = "#{singularize resource_name}_id"
+                      r.params[param_name] = id
+
+                      if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
+                        controller = Object.const_get(controller_name).new
+                        result = controller.execute(r)
+
+                        handler = Object.const_get(handler_name).new(result)
+                        handler.execute(r)
+                      else
+                        response.status = 404
+                        { error: "Route not implemented" }
+                      end
+                    end
+
+                    # POST /resource/:id/nested_resource - Create nested resource
+                    r.post do
+                      controller_name = "#{nested_resource.capitalize}CreateController"
+                      handler_name = "#{nested_resource.capitalize}CreateHandler"
+                      param_name = "#{singularize resource_name}_id"
+                      r.params[param_name] = id
+
+                      if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
+                        controller = Object.const_get(controller_name).new
+                        result = controller.execute(r)
+
+                        handler = Object.const_get(handler_name).new(result)
+                        handler.execute(r)
+                      else
+                        response.status = 404
+                        { error: "Route not implemented" }
+                      end
+                    end
+                  end
+                end
+              end
+            end
+
+            # Regular resource routes
             r.is do
               # Store id in params
 
@@ -165,6 +221,13 @@ module MK
         end
       end
     end
+
+    # Register a nested resource
+    def self.register_nested_resource(parent_resource, child_resource)
+      self.nested_resources ||= {}
+      self.nested_resources[parent_resource] ||= []
+      self.nested_resources[parent_resource] << child_resource unless self.nested_resources[parent_resource].include?(child_resource)
+    end
   end
 
   # Base controller class for MK framework
@@ -198,7 +261,7 @@ module MK
 
     def initialize(model)
       @model = model
-      @model_name = model.class.name.downcase
+      @model_name = model.class.name.downcase if model.is_a?(Sequel::Model)
       @success_block = nil
       @fail_block = nil
 
