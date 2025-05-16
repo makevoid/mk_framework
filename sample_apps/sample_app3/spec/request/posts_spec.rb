@@ -5,6 +5,7 @@ require 'spec_helper'
 describe "Posts" do
   describe "GET /posts" do
     before do
+      Comment.dataset.delete
       Post.dataset.delete
 
       @post1 = Post.create(
@@ -38,22 +39,47 @@ describe "Posts" do
   describe "GET /posts/:id" do
     before do
       Post.dataset.delete
+      Comment.dataset.delete
 
       @post = Post.create(
         title: "Test Post",
         description: "This is a test blog post"
       )
+      
+      @comment1 = Comment.create(
+        post_id: @post.id,
+        content: "First comment",
+        author: "Alice"
+      )
+      
+      @comment2 = Comment.create(
+        post_id: @post.id,
+        content: "Second comment",
+        author: "Bob"
+      )
     end
 
     context "when post exists" do
-      it "returns the post" do
+      it "returns the post with its comments" do
         get "/posts/#{@post.id}"
 
         expect(last_response.status).to eq 200
 
-        expect(resp[:id]).to eq @post.id
-        expect(resp[:title]).to eq "Test Post"
-        expect(resp[:description]).to eq "This is a test blog post"
+        # Check post data
+        expect(resp[:post][:id]).to eq @post.id
+        expect(resp[:post][:title]).to eq "Test Post"
+        expect(resp[:post][:description]).to eq "This is a test blog post"
+        
+        # Check comments
+        expect(resp[:comments].length).to eq 2
+        
+        expect(resp[:comments][0][:id]).to eq @comment1.id
+        expect(resp[:comments][0][:content]).to eq "First comment"
+        expect(resp[:comments][0][:author]).to eq "Alice"
+        
+        expect(resp[:comments][1][:id]).to eq @comment2.id
+        expect(resp[:comments][1][:content]).to eq "Second comment"
+        expect(resp[:comments][1][:author]).to eq "Bob"
       end
     end
 
@@ -68,6 +94,10 @@ describe "Posts" do
   end
 
   describe "POST /posts" do
+    before do
+      Comment.dataset.delete
+      Post.dataset.delete
+    end
     context "with valid parameters" do
       it "creates a new post" do
         post '/posts', {
@@ -111,6 +141,7 @@ describe "Posts" do
 
   describe "PUT /posts/:id" do
     before do
+      Comment.dataset.delete
       Post.dataset.delete
 
       @post = Post.create(
@@ -186,6 +217,7 @@ describe "Posts" do
 
   describe "DELETE /posts/:id" do
     before do
+      Comment.dataset.delete
       Post.dataset.delete
 
       @post = Post.create(

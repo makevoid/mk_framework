@@ -39,3 +39,14 @@
   - POST /todos - create
   - POST /todos/:id - update
   - POST /todos/:id/delete - delete
+
+## Custom Routes
+- For endpoints that don't follow the standard RESTful pattern, use custom routes in the app.rb file
+- Custom routes are defined in the routing method of the application class
+- Register routes using the register_route method with the format: 
+  `register_route :method, "/path", "ResourceName", "ActionName", "controller_path", "handler_path"`
+
+## Nested Resources
+- For nested resources like comments, use routes like `/posts/:post_id/comments`
+- Create dedicated controllers and handlers for these nested resources
+- Make sure to validate the parent resource existence in the controller
