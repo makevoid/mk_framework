@@ -4,7 +4,7 @@ class PostsUpdateController < MK::Controller
   route do |r|
     post = Post[r.params.fetch('id')]
 
-    r.halt(404, { message: "post not found" }) if post.nil?
+    r.halt(404, { error: "Post not found" }) if post.nil?
 
     params = r.params
 

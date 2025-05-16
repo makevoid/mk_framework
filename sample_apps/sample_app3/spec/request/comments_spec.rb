@@ -186,7 +186,7 @@ describe "Comments" do
       }
 
       expect(last_response.status).to eq 404
-      expect(resp[:message]).to eq "comment not found"
+      expect(resp[:error]).to eq "Comment not found"
     end
   end
 
@@ -216,6 +216,7 @@ describe "Comments" do
       post "/comments/999999/delete"
 
       expect(last_response.status).to eq 404
+
       expect(resp).to have_key :error
       expect(resp[:error]).to eq "Comment not found"
     end

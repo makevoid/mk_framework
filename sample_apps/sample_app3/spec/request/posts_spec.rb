@@ -210,7 +210,7 @@ describe "Posts" do
         }
 
         expect(last_response.status).to eq 404
-        expect(resp[:message]).to eq "post not found"
+        expect(resp[:error]).to eq "Post not found"
       end
     end
   end
