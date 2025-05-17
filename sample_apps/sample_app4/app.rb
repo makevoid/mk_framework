@@ -6,7 +6,7 @@ require 'roda'
 require_relative '../../lib/mk_framework'
 
 # Set up database connection
-DB = Sequel.connect('sqlite://kanban.db')
+DB = Sequel.connect('sqlite://kanban2.db')
 
 # Create cards table
 DB.create_table :cards do
