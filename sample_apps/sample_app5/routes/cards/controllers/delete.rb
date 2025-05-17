@@ -7,7 +7,6 @@ class CardsDeleteController < MK::Controller
 
     r.halt(404, { error: "Card not found" }.to_json) unless card
 
-    result = card.dup
-    result
+    card
   end
 end

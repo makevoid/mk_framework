@@ -7,7 +7,6 @@ gem "json"
 gem "rake"
 gem "rackup"
 gem "puma"
-gem "logger"
 
 gem "rspec", "~> 3.13"
 

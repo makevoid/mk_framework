@@ -23,7 +23,6 @@ class CommentsUpdateController < MK::Controller
       }.to_json)
     end
 
-    comment.save
     comment
   end
 end

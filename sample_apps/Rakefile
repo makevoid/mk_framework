@@ -1,0 +1,1 @@
+DIRS = %w[sample_app1 sample_app2 sample_app3]

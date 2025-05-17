@@ -29,7 +29,7 @@ describe "Cards" do
       # Access cards via let
       card1
       card2
-      
+
       get '/cards'
 
       expect(last_response.status).to eq 200
@@ -80,16 +80,14 @@ describe "Cards" do
 
     context "when card exists" do
       it "returns the card with its comments" do
-        # Access resources via let
         card
         comment1
         comment2
-        
+
         get "/cards/#{card.id}"
 
         expect(last_response.status).to eq 200
 
-        # Check card data
         expect(resp[:card][:id]).to eq card.id
         expect(resp[:card][:title]).to eq "Test Card"
         expect(resp[:card][:description]).to eq "This is a test card"
@@ -123,7 +121,7 @@ describe "Cards" do
       Comment.dataset.delete
       Card.dataset.delete
     end
-    
+
     context "with valid parameters" do
       it "creates a new card" do
         post '/cards', {
@@ -185,7 +183,7 @@ describe "Cards" do
       Comment.dataset.delete
       Card.dataset.delete
     end
-    
+
     let(:card) do
       Card.create(
         title: "Original Title",
@@ -198,7 +196,7 @@ describe "Cards" do
       it "updates the card title" do
         # Access card via let
         card
-        
+
         post "/cards/#{card.id}", {
           title: "Updated Title"
         }
@@ -214,7 +212,7 @@ describe "Cards" do
 
       it "updates the card description" do
         card
-        
+
         post "/cards/#{card.id}", {
           description: "Updated Description"
         }
@@ -230,7 +228,7 @@ describe "Cards" do
 
       it "updates the card status" do
         card
-        
+
         post "/cards/#{card.id}", {
           status: "In Progress"
         }
@@ -246,7 +244,7 @@ describe "Cards" do
 
       it "updates multiple fields at once" do
         card
-        
+
         post "/cards/#{card.id}", {
           title: "Completely Updated",
           description: "New Description",
@@ -264,7 +262,7 @@ describe "Cards" do
 
       it "returns validation errors when title is too long" do
         card
-        
+
         post "/cards/#{card.id}", {
           title: "X" * 101
         }
@@ -277,7 +275,7 @@ describe "Cards" do
 
       it "returns validation errors when status is invalid" do
         card
-        
+
         post "/cards/#{card.id}", {
           status: "Invalid Status"
         }
@@ -306,7 +304,7 @@ describe "Cards" do
       Comment.dataset.delete
       Card.dataset.delete
     end
-    
+
     let(:card) do
       Card.create(
         title: "Card to Delete",
@@ -320,7 +318,7 @@ describe "Cards" do
         # Access card via let
         card
         card_id = card.id
-        
+
         post "/cards/#{card.id}/delete"
 
         expect(last_response.status).to eq 200

@@ -7,14 +7,11 @@ class CardsShowController < MK::Controller
 
     r.halt(404, { error: "Card not found" }.to_json) unless card
 
-    comments_data = Comment.where(card_id: id).all
+    comments = Comment.where(card_id: id).all
 
-    # card.comments = comments
-
-    def card.comments
-      comments_data
-    end
-
-    card
+    {
+      card: card,
+      comments: comments
+    }
   end
 end

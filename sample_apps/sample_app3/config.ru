@@ -2,5 +2,5 @@
 
 require_relative 'app'
 
-# Run the BlogApp class directly as a Rack app
-run BlogApp
+# Run the TodoApp class directly as a Rack app
+run TodoApp
