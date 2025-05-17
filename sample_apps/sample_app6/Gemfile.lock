@@ -42,11 +42,11 @@ DEPENDENCIES
   json
   logger
   puma
-  rack-test (~> 2.2)
+  rack-test
   rackup
   rake
   roda
-  rspec (~> 3.13)
+  rspec
   sequel
   sqlite3
 
