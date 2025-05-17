@@ -2,6 +2,9 @@
 
 require 'roda'
 require 'sequel'
+require 'logger'
+require 'json'
+require 'fileutils'
 
 # TODO: REFACTOR THIS
 def singularize(str)
@@ -17,7 +20,50 @@ module MK
     plugin :json_parser
     plugin :halt
     plugin :not_found
-    # plugin :error_handler
+    plugin :error_handler do |e|
+      # Create a detailed error object
+      error_details = {
+        error: e.class.name,
+        message: e.message,
+        timestamp: Time.now.iso8601,
+        request_info: {
+          path: request.path,
+          method: request.request_method,
+          params: request.params.reject { |k, _| k.to_s.include?('password') }  # Sanitize sensitive data
+        },
+        trace: {
+          full: e.backtrace,
+          relevant: e.backtrace.select { |line| line.include?('mk_framework') || line.include?('app/') }
+        }
+      }
+      
+      # Log the detailed error
+      if defined?(logger) && logger.respond_to?(:error)
+        logger.error("ERROR: #{e.class.name} - #{e.message}")
+        logger.error(error_details.to_json)
+      else
+        puts "ERROR: #{e.class.name} - #{e.message}"
+        puts JSON.pretty_generate(error_details)
+      end
+      
+      # In development mode, return the detailed error
+      if ENV['RACK_ENV'] == 'development'
+        response.status = case e
+                          when Sequel::NoMatchingRow, Sequel::UniqueConstraintViolation
+                            400
+                          when Sequel::ValidationFailed
+                            422
+                          else
+                            500
+                          end
+        content_type 'application/json'
+        error_details.to_json
+      else
+        # In production, return a sanitized error
+        response.status = 500
+        { error: "Server error", message: "An unexpected error occurred" }.to_json
+      end
+    end
 
     not_found do
       path = self.request.path
@@ -68,15 +114,26 @@ module MK
     end
 
     ROUTES_MAIN = -> (controller_name:, handler_name:, r:) {
-      if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
-        controller = Object.const_get(controller_name).new
-        # puts "Controller: #{controller_name} -- Handler: #{handler_name}" # DEBUG
-        result = controller.execute(r)
-        handler = Object.const_get(handler_name).new(result)
-        handler.execute(r)
-      else
-        response.status = 404
-        { error: "#{handler_name} Not Found" }
+      begin
+        if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
+          controller = Object.const_get(controller_name).new
+          result = controller.execute(r)
+          handler = Object.const_get(handler_name).new(result)
+          handler.execute(r)
+        else
+          r.response.status = 404
+          { error: "#{handler_name} Not Found" }
+        end
+      rescue => e
+        # Add contextual information to the exception
+        e.define_singleton_method(:context) do
+          {
+            controller: controller_name,
+            handler: handler_name,
+            params: r.params.reject { |k, _| k.to_s.include?('password') }
+          }
+        end
+        raise e  # Re-raise for the error_handler plugin to catch
       end
     }
 
