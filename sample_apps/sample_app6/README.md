@@ -1,6 +1,6 @@
-# Todo List API
+# Weather API
 
-A RESTful API for managing todo items built with the MK Framework, a lightweight Ruby web framework based on Roda.
+A RESTful API for retrieving weather forecasts built with the MK Framework, a lightweight Ruby web framework based on Roda.
 
 ## Overview
 
@@ -12,18 +12,23 @@ This application demonstrates a clean separation of concerns with a RESTful arch
 
 ## Features
 
-- Create, read, update and delete todo items
-- Input validation
+- Retrieve hourly weather forecast for any location
+- Cache weather data with automatic 1-hour expiration
+- List all previously requested locations
+- OpenWeatherMap API integration
 - JSON response formatting
-- SQLite database storage
-- RESTful API design
+- SQLite database storage for caching
+
+## Prerequisites
+
+You need an OpenWeatherMap API key stored in a file at `~/.openweathermaps_api_key`.
 
 ## Installation
 
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd sample_app2
+cd sample_app6
 
 # Install dependencies
 bundle install
@@ -38,122 +43,65 @@ The server will start on http://localhost:9292
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/todos` | GET | List all todos |
-| `/todos/:id` | GET | Get a specific todo |
-| `/todos` | POST | Create a new todo |
-| `/todos/:id` | POST | Update a todo |
-| `/todos/:id/delete` | POST | Delete a todo |
+| `/weather` | GET | List all cached locations |
+| `/weather/:location` | GET | Get weather forecast for a location |
 
 ### Request/Response Examples
 
-#### List all todos
+#### List all cached locations
 
 ```
-GET /todos
+GET /weather
 ```
 
 Response:
 ```json
 [
   {
-    "id": 1,
-    "title": "Buy groceries",
-    "description": "Milk, eggs, bread",
-    "completed": false,
-    "created_at": "2023-01-01T12:00:00Z",
-    "updated_at": "2023-01-01T12:00:00Z"
+    "location": "London",
+    "fetched_at": "2023-01-01T12:00:00Z",
+    "cache_expires_at": "2023-01-01T13:00:00Z",
+    "is_cached": true
   },
   {
-    "id": 2,
-    "title": "Finish project",
-    "description": "Complete the todo API",
-    "completed": true,
-    "created_at": "2023-01-02T10:00:00Z",
-    "updated_at": "2023-01-02T15:30:00Z"
+    "location": "New York",
+    "fetched_at": "2023-01-02T10:00:00Z",
+    "cache_expires_at": "2023-01-02T11:00:00Z",
+    "is_cached": false
   }
 ]
 ```
 
-#### Get a specific todo
+#### Get a specific location's weather forecast
 
 ```
-GET /todos/1
-```
-
-Response:
-```json
-{
-  "id": 1,
-  "title": "Buy groceries",
-  "description": "Milk, eggs, bread",
-  "completed": false,
-  "created_at": "2023-01-01T12:00:00Z",
-  "updated_at": "2023-01-01T12:00:00Z"
-}
-```
-
-#### Create a new todo
-
-```
-POST /todos
-```
-
-Request body:
-```json
-{
-  "title": "Learn Ruby",
-  "description": "Study MK Framework",
-  "completed": false
-}
+GET /weather/London
 ```
 
 Response:
 ```json
 {
-  "id": 3,
-  "title": "Learn Ruby",
-  "description": "Study MK Framework",
-  "completed": false,
-  "created_at": "2023-01-03T09:00:00Z",
-  "updated_at": "2023-01-03T09:00:00Z"
-}
-```
-
-#### Update a todo
-
-```
-POST /todos/1
-```
-
-Request body:
-```json
-{
-  "completed": true
-}
-```
-
-Response:
-```json
-{
-  "id": 1,
-  "title": "Buy groceries",
-  "description": "Milk, eggs, bread",
-  "completed": true,
-  "created_at": "2023-01-01T12:00:00Z",
-  "updated_at": "2023-01-03T14:00:00Z"
-}
-```
-
-#### Delete a todo
-
-```
-POST /todos/1/delete
-```
-
-Response:
-```json
-{
-  "success": true
+  "location": "London",
+  "hourly_forecast": [
+    {
+      "time": "2023-01-01T12:00:00Z",
+      "temperature": 15.2,
+      "feels_like": 14.8,
+      "humidity": 76,
+      "weather": {
+        "main": "Clear",
+        "description": "clear sky",
+        "icon": "01d"
+      },
+      "wind": {
+        "speed": 2.68,
+        "direction": 167
+      }
+    },
+    ...
+  ],
+  "fetched_at": "2023-01-01T12:00:00Z",
+  "cache_expires_at": "2023-01-01T13:00:00Z"
 }
 ```
 
@@ -161,10 +109,18 @@ Response:
 
 The application follows a structured architecture:
 
-1. **Models** (`models/todo.rb`): Define the data schema and validation rules
-2. **Controllers** (`routes/todos/controllers/`): Handle business logic and data operations
-3. **Handlers** (`routes/todos/handlers/`): Format responses and set HTTP status codes
+1. **Models** (`models/weather.rb`): Define the data schema and validation rules
+2. **Controllers** (`routes/weather/controllers/`): Handle business logic and data operations
+3. **Handlers** (`routes/weather/handlers/`): Format responses and set HTTP status codes
 4. **Application** (`app.rb`): Configure the database and set up the application
+
+## Caching
+
+Weather data is cached in the database with the following rules:
+- Each location has its own cache entry
+- Cache expires after 1 hour
+- If the cache is valid, the API returns cached data
+- If the cache is expired, new data is fetched from OpenWeatherMap
 
 ## Testing
 
@@ -178,6 +134,5 @@ bundle exec rspec
 
 The MK Framework has some unique conventions:
 
-- DELETE operations use POST to `/:resource/:id/delete` instead of DELETE method
-- UPDATE operations use POST to `/:resource/:id` instead of PUT/PATCH
 - Controllers handle data operations, handlers manage response formatting
+- RESTful routes map to controller/handler pairs
