@@ -27,10 +27,11 @@ module MK
         request_info: {
           path: request.path,
           method: request.request_method,
-          params: request.params.reject { |k, _| k.to_s.include?('password') }  # Sanitize sensitive data
+          params: request.params.reject { |k, _| k.to_s.include?('password') }, # Sanitize sensitive data
+          message: e.message,
         },
         trace: {
-          relevant: e.backtrace.reject { |line| line.include?('forwardable') || line.include?('roda') || line.include?('rack-test') || line.include?('rspec')  }
+          relevant: e.backtrace.reject { |line| line.include?("ruby_executable_hooks") || line.include?('forwardable') || line.include?('roda') || line.include?('rack-test') || line.include?('rspec')  }
         }
       }
 
@@ -57,8 +58,7 @@ module MK
                           else
                             500
                           end
-        content_type 'application/json'
-        error_details.to_json
+        error_details
       else
         # In production, return a sanitized error
         response.status = 500
@@ -132,14 +132,17 @@ module MK
 
     ROUTES_MAIN = -> (controller_name:, handler_name:, r:) {
       begin
+        resource_name = singularize controller_name.split(/Index|Show|Update|Delete|Create/).first
         if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
           controller = Object.const_get(controller_name).new
           result = controller.execute(r)
+          if result.nil?
+            r.halt 404, { error: "#{resource_name} not found" }
+          end
           handler = Object.const_get(handler_name).new(result)
           handler.execute(r)
         else
-          r.response.status = 404
-          { error: "#{handler_name} Not Found" }
+          r.halt 404, { error: "#{resource_name} not found" }
         end
       rescue => e
         # Add contextual information to the exception
@@ -299,7 +302,7 @@ module MK
           block
         end
       end
-      
+
       # New method for handler class definition
       def handler(&block)
         define_method(:handler_block) do
@@ -330,75 +333,83 @@ module MK
 
     def execute(r)
       begin
-        # Try to execute the handler_block if it exists (new style)
-        if respond_to?(:handler_block)
-          return instance_exec(r, &handler_block)
-        end
-        
-        # Otherwise, fall back to route_block execution (old style)
-        result = instance_exec(r, &route_block)
+        handler_name = self.class.name
 
-        # If the result is a specific value returned from the route_block, use that
-        if result != self
+        result = instance_exec(r, &handler_block)
+
+        # Handle different types of handlers
+        if handler_name.end_with?('IndexHandler')
+          # For index and show handlers, return the model directly
           return result
         end
-        
-        # Handle different types of handlers
-        if self.class.name.end_with?('IndexHandler') || self.class.name.end_with?('ShowHandler')
+
+        if handler_name.end_with?('ShowHandler')
           # For index and show handlers, return the model directly
-          return model
+
+          unless result.is_a? Sequel::Model
+            return result
+          else
+            puts "ERROR"
+            puts "You can't return a sequel model from the ShowHandler"
+            r.halt 500, {
+              error: "Server error",
+              message: "Internal resource error"
+            }
+          end
         end
 
         # For other cases (create, update, delete with success/failure blocks)
-        if @success_block && @fail_block
-          begin
-            unless self.class.name.end_with?('DeleteHandler')
-              if model.save
-                return instance_exec(r, &@success_block)
-              else
-                return instance_exec(r, &@fail_block)
-              end
-            else
-              if model.is_a?(Sequel::Model)
-                if model.delete
+        if handler_name.end_with?('CreateHandler') || handler_name.end_with?('UpdateHandler') || handler_name.end_with?('DeleteHandler')
+          if @success_block && @fail_block
+            begin
+              unless handler_name.end_with?('DeleteHandler')
+                if model.save
                   return instance_exec(r, &@success_block)
                 else
                   return instance_exec(r, &@fail_block)
                 end
               else
-                puts "ERROR"
-                puts "You need to return a sequel model from the DeleteController"
-                return {
-                  error: "Server error",
-                  message: "Internal resource error"
-                }
+                if model.is_a?(Sequel::Model)
+                  if model.delete
+                    return instance_exec(r, &@success_block)
+                  else
+                    return instance_exec(r, &@fail_block)
+                  end
+                else
+                  puts "ERROR"
+                  puts "You need to return a sequel model from the DeleteController"
+                  r.halt 500, {
+                    error: "Server error",
+                    message: "Internal resource error"
+                  }
+                end
               end
+            rescue Sequel::ValidationFailed => e
+              return instance_exec(r, &@fail_block)
+            rescue StandardError => e
+              # Handle other errors
+              r.response.status = 500
+              puts "ERROR:"
+              puts e.message
+              puts e.backtrace.join("\n")
+              r.halt 500, {
+                error: "Server error",
+                message: e.message
+              }
             end
-          rescue Sequel::ValidationFailed => e
-            return instance_exec(r, &@fail_block)
-          rescue StandardError => e
-            # Handle other errors
-            r.response.status = 500
-            puts "ERROR:"
-            puts e.message
-            puts e.backtrace.join("\n")
-            return {
-              error: "Server error",
-              message: e.message
-            }
+          else
+            raise "Success and Error blocks are required for create, update, and delete actions" unless handler_name.end_with?('IndexHandler') || handler_name.end_with?('ShowHandler')
           end
-        else
-          raise "Success and Error blocks are required for create, update, and delete actions" unless self.class.name.end_with?('IndexHandler') || self.class.name.end_with?('ShowHandler')
         end
+        raise "No Handler Block Found".inspect
       rescue StandardError => e
-        # Add more context to the error
-        e.define_singleton_method(:additional_info) do
-          {
-            handler_class: self.class.name,
-            model_class: model ? model.class.name : nil,
-            model_state: model.is_a?(Sequel::Model) ? model.values : nil
-          }
-        end
+        error_info = {
+          handler_class: handler_name,
+          model_class: model ? model.class.name : nil,
+          model_state: model.is_a?(Sequel::Model) ? model.values : nil
+          }.to_yaml
+        puts "ERROR:"
+        puts error_info
         raise e  # Re-raise to be caught by the application error handler
       end
     end

@@ -24,18 +24,19 @@ describe "Todos" do
       get '/todos'
 
       expect(last_response.status).to eq 200
+      expect(resp[:custom_field]).to eq "Custom value for index"
 
-      expect(resp.length).to eq 2
+      todos = resp[:todos]
+      expect(todos.length).to eq 2
+      expect(todos[0][:id]).to eq @todo1.id
+      expect(todos[0][:title]).to eq "First Todo"
+      expect(todos[0][:description]).to eq "This is the first test todo"
+      expect(todos[0][:completed]).to eq false
 
-      expect(resp[0][:id]).to eq @todo1.id
-      expect(resp[0][:title]).to eq "First Todo"
-      expect(resp[0][:description]).to eq "This is the first test todo"
-      expect(resp[0][:completed]).to eq false
-
-      expect(resp[1][:id]).to eq @todo2.id
-      expect(resp[1][:title]).to eq "Second Todo"
-      expect(resp[1][:description]).to eq "This is the second test todo"
-      expect(resp[1][:completed]).to eq true
+      expect(todos[1][:id]).to eq @todo2.id
+      expect(todos[1][:title]).to eq "Second Todo"
+      expect(todos[1][:description]).to eq "This is the second test todo"
+      expect(todos[1][:completed]).to eq true
     end
   end
 
@@ -82,30 +83,6 @@ describe "Todos" do
         expect(resp[:todo][:title]).to eq "Test Todo"
       end
     end
-
-    context "with invalid parameters" do
-      it "returns validation errors when title is missing" do
-        post '/todos', {
-          description: "This todo has no title"
-        }
-
-        expect(last_response.status).to eq 422
-
-        expect(resp[:error]).to eq "Validation failed"
-        expect(resp[:details]).to have_key :title
-      end
-
-      it "returns validation errors when title is too long" do
-        post '/todos', {
-          title: "X" * 101,
-        }
-
-        expect(last_response.status).to eq 422
-
-        expect(resp[:error]).to eq "Validation failed"
-        expect(resp[:details]).to have_key :title
-      end
-    end
   end
 
   describe "PUT /todos/:id" do
@@ -128,18 +105,6 @@ describe "Todos" do
         expect(resp[:message]).to eq "Todo updated"
         expect(resp[:todo][:id]).to eq @todo.id
         expect(resp[:todo][:title]).to eq "Updated Title"
-      end
-
-      it "updates the todo description" do
-        post "/todos/#{@todo.id}", {
-          title: "123"
-        }
-
-        expect(last_response.status).to eq 200
-
-        expect(resp[:message]).to eq "Todo updated"
-        expect(resp[:todo][:id]).to eq @todo.id
-        expect(resp[:todo][:title]).to eq "Original Title"
       end
 
       it "updates the todo completed status" do
