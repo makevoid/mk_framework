@@ -92,7 +92,7 @@ module MK
                 param_name = "#{singularize(resource_name)}_id"
                 r.params[param_name] = id
 
-                MAIN_ROUTE.(controller_name: controller_name, handler_name: handler_name, r: r)
+                ROUTES_MAIN.(controller_name: controller_name, handler_name: handler_name, r: r)
               end
 
               # POST /resource/:id/nested_resource - Create nested resource
@@ -102,7 +102,7 @@ module MK
                 param_name = "#{singularize(resource_name)}_id"
                 r.params[param_name] = id
 
-                MAIN_ROUTE.(controller_name: controller_name, handler_name: handler_name, r: r)
+                ROUTES_MAIN.(controller_name: controller_name, handler_name: handler_name, r: r)
               end
             end
           end
