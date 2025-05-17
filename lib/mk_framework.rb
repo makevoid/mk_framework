@@ -294,7 +294,7 @@ module MK
 
   # Base handler class for MK framework
   class Handler
-    attr_reader :model
+    # attr_reader :model
 
     class << self
       def route(&block)
@@ -311,14 +311,15 @@ module MK
       end
     end
 
-    def initialize(model)
-      @model = model
-      @model_name = model.class.name.downcase if model.is_a?(Sequel::Model)
+    def initialize(controller_return_value)
+      @controller_return_value = controller_return_value
+      # @model = model
+      # @model_name = model.class.name.downcase if model.is_a?(Sequel::Model)
       @success_block = nil
       @fail_block = nil
 
       # Dynamically define accessors for the model
-      define_model_accessors if model
+      # define_model_accessors if model
     end
 
     def success(&block)
@@ -331,10 +332,22 @@ module MK
       self
     end
 
+    attr_accessor :model
+
     def execute(r)
       begin
+        controller_return_value = @controller_return_value
+
+        if controller_return_value.nil?
+          r.halt(404, {
+            error: "Not Found",
+            message: "The requested resource was not found"
+          })
+        end
+
         handler_name = self.class.name
 
+        self.model = controller_return_value
         result = instance_exec(r, &handler_block)
 
         # Handle different types of handlers
@@ -362,28 +375,34 @@ module MK
         if handler_name.end_with?('CreateHandler') || handler_name.end_with?('UpdateHandler') || handler_name.end_with?('DeleteHandler')
           if @success_block && @fail_block
             begin
+              unless controller_return_value.is_a?(Sequel::Model)
+                puts "ERROR"
+                puts "You need to return a sequel model from the Controller for Create, Update or Delete handlers."
+                r.halt 500, {
+                  error: "Server error",
+                  # TODO: separate dev mode vs prod mode messages
+                  message: "Internal resource error - You need to return a sequel model from the Controller for Create, Update or Delete handlers."
+                }
+              end
+
               unless handler_name.end_with?('DeleteHandler')
-                if model.save
+                if self.model.save
                   return instance_exec(r, &@success_block)
                 else
                   return instance_exec(r, &@fail_block)
                 end
               else
-                if model.is_a?(Sequel::Model)
-                  if model.delete
-                    return instance_exec(r, &@success_block)
-                  else
-                    return instance_exec(r, &@fail_block)
-                  end
+                if self.model.delete
+                  return instance_exec(r, &@success_block)
                 else
-                  puts "ERROR"
-                  puts "You need to return a sequel model from the DeleteController"
-                  r.halt 500, {
-                    error: "Server error",
-                    message: "Internal resource error"
-                  }
+                  return instance_exec(r, &@fail_block)
                 end
               end
+
+              {
+                error: "Server error",
+                message: "Internal resource error - End of route reached error"
+              }
             rescue Sequel::ValidationFailed => e
               return instance_exec(r, &@fail_block)
             rescue StandardError => e
@@ -437,19 +456,19 @@ module MK
     # Define accessors for model object dynamically using define_method
     def define_model_accessors
       # First define a method to access the model directly
-      self.class.class_eval do
-        define_method(@model_name.to_sym) { @model } if @model.is_a?(Sequel::Model)
-      end
+      # self.class.class_eval do
+      #   define_method(@model_name.to_sym) { @model } if @model.is_a?(Sequel::Model)
+      # end
 
       # Then define methods for all model attributes
-      if @model.is_a?(Sequel::Model)
-        @model.columns.each do |column|
-          self.class.class_eval do
-            define_method(column) { @model[column] }
-            define_method("#{column}=") { |value| @model[column] = value }
-          end
-        end
-      end
+      # if @model.is_a?(Sequel::Model)
+      #   @model.columns.each do |column|
+      #     self.class.class_eval do
+      #       define_method(column) { @model[column] }
+      #       define_method("#{column}=") { |value| @model[column] = value }
+      #     end
+      #   end
+      # end
     end
   end
 end

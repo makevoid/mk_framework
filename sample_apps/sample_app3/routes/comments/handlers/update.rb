@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class CommentsUpdateHandler < MK::Handler
-  route do |r|
+  handler do |r|
     success do |r|
       {
         message: "Comment updated",

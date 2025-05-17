@@ -4,15 +4,13 @@ class PostsShowController < MK::Controller
   route do |r|
     post = Post[r.params.fetch('id')]
 
-    if post
-      comments = Comment.where(post_id: post.id).all
+    r.halt 404, { error: "Post not found" } unless post
 
-      {
-        post: post,
-        comments: comments
-      }
-    else
-      nil
-    end
+    comments = Comment.where(post_id: post.id).all
+
+    {
+      post: post,
+      comments: comments
+    }
   end
 end
