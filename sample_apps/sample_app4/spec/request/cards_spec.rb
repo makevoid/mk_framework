@@ -7,14 +7,18 @@ describe "Cards" do
     before do
       Comment.dataset.delete
       Card.dataset.delete
+    end
 
-      @card1 = Card.create(
+    let(:card1) do
+      Card.create(
         title: "First Task",
         description: "This is the first test task",
         status: "Todo"
       )
+    end
 
-      @card2 = Card.create(
+    let(:card2) do
+      Card.create(
         title: "Second Task",
         description: "This is the second test task",
         status: "In Progress"
@@ -22,18 +26,22 @@ describe "Cards" do
     end
 
     it "returns all cards" do
+      # Access cards via let
+      card1
+      card2
+      
       get '/cards'
 
       expect(last_response.status).to eq 200
 
       expect(resp.length).to eq 2
 
-      expect(resp[0][:id]).to eq @card1.id
+      expect(resp[0][:id]).to eq card1.id
       expect(resp[0][:title]).to eq "First Task"
       expect(resp[0][:description]).to eq "This is the first test task"
       expect(resp[0][:status]).to eq "Todo"
 
-      expect(resp[1][:id]).to eq @card2.id
+      expect(resp[1][:id]).to eq card2.id
       expect(resp[1][:title]).to eq "Second Task"
       expect(resp[1][:description]).to eq "This is the second test task"
       expect(resp[1][:status]).to eq "In Progress"
@@ -44,21 +52,27 @@ describe "Cards" do
     before do
       Card.dataset.delete
       Comment.dataset.delete
+    end
 
-      @card = Card.create(
+    let(:card) do
+      Card.create(
         title: "Test Card",
         description: "This is a test card",
         status: "Todo"
       )
+    end
 
-      @comment1 = Comment.create(
-        card_id: @card.id,
+    let(:comment1) do
+      Comment.create(
+        card_id: card.id,
         content: "First comment",
         author: "Alice"
       )
+    end
 
-      @comment2 = Comment.create(
-        card_id: @card.id,
+    let(:comment2) do
+      Comment.create(
+        card_id: card.id,
         content: "Second comment",
         author: "Bob"
       )
@@ -66,12 +80,17 @@ describe "Cards" do
 
     context "when card exists" do
       it "returns the card with its comments" do
-        get "/cards/#{@card.id}"
+        # Access resources via let
+        card
+        comment1
+        comment2
+        
+        get "/cards/#{card.id}"
 
         expect(last_response.status).to eq 200
 
         # Check card data
-        expect(resp[:card][:id]).to eq @card.id
+        expect(resp[:card][:id]).to eq card.id
         expect(resp[:card][:title]).to eq "Test Card"
         expect(resp[:card][:description]).to eq "This is a test card"
         expect(resp[:card][:status]).to eq "Todo"
@@ -79,11 +98,11 @@ describe "Cards" do
         # Check comments
         expect(resp[:comments].length).to eq 2
 
-        expect(resp[:comments][0][:id]).to eq @comment1.id
+        expect(resp[:comments][0][:id]).to eq comment1.id
         expect(resp[:comments][0][:content]).to eq "First comment"
         expect(resp[:comments][0][:author]).to eq "Alice"
 
-        expect(resp[:comments][1][:id]).to eq @comment2.id
+        expect(resp[:comments][1][:id]).to eq comment2.id
         expect(resp[:comments][1][:content]).to eq "Second comment"
         expect(resp[:comments][1][:author]).to eq "Bob"
       end
@@ -104,6 +123,7 @@ describe "Cards" do
       Comment.dataset.delete
       Card.dataset.delete
     end
+    
     context "with valid parameters" do
       it "creates a new card" do
         post '/cards', {
@@ -164,8 +184,10 @@ describe "Cards" do
     before do
       Comment.dataset.delete
       Card.dataset.delete
-
-      @card = Card.create(
+    end
+    
+    let(:card) do
+      Card.create(
         title: "Original Title",
         description: "Original Description",
         status: "Todo"
@@ -174,49 +196,58 @@ describe "Cards" do
 
     context "when card exists" do
       it "updates the card title" do
-        post "/cards/#{@card.id}", {
+        # Access card via let
+        card
+        
+        post "/cards/#{card.id}", {
           title: "Updated Title"
         }
 
         expect(last_response.status).to eq 200
 
         expect(resp[:message]).to eq "Card updated"
-        expect(resp[:card][:id]).to eq @card.id
+        expect(resp[:card][:id]).to eq card.id
         expect(resp[:card][:title]).to eq "Updated Title"
         expect(resp[:card][:description]).to eq "Original Description"
         expect(resp[:card][:status]).to eq "Todo"
       end
 
       it "updates the card description" do
-        post "/cards/#{@card.id}", {
+        card
+        
+        post "/cards/#{card.id}", {
           description: "Updated Description"
         }
 
         expect(last_response.status).to eq 200
 
         expect(resp[:message]).to eq "Card updated"
-        expect(resp[:card][:id]).to eq @card.id
+        expect(resp[:card][:id]).to eq card.id
         expect(resp[:card][:title]).to eq "Original Title"
         expect(resp[:card][:description]).to eq "Updated Description"
         expect(resp[:card][:status]).to eq "Todo"
       end
 
       it "updates the card status" do
-        post "/cards/#{@card.id}", {
+        card
+        
+        post "/cards/#{card.id}", {
           status: "In Progress"
         }
 
         expect(last_response.status).to eq 200
 
         expect(resp[:message]).to eq "Card updated"
-        expect(resp[:card][:id]).to eq @card.id
+        expect(resp[:card][:id]).to eq card.id
         expect(resp[:card][:title]).to eq "Original Title"
         expect(resp[:card][:description]).to eq "Original Description"
         expect(resp[:card][:status]).to eq "In Progress"
       end
 
       it "updates multiple fields at once" do
-        post "/cards/#{@card.id}", {
+        card
+        
+        post "/cards/#{card.id}", {
           title: "Completely Updated",
           description: "New Description",
           status: "Done"
@@ -225,14 +256,16 @@ describe "Cards" do
         expect(last_response.status).to eq 200
 
         expect(resp[:message]).to eq "Card updated"
-        expect(resp[:card][:id]).to eq @card.id
+        expect(resp[:card][:id]).to eq card.id
         expect(resp[:card][:title]).to eq "Completely Updated"
         expect(resp[:card][:description]).to eq "New Description"
         expect(resp[:card][:status]).to eq "Done"
       end
 
       it "returns validation errors when title is too long" do
-        post "/cards/#{@card.id}", {
+        card
+        
+        post "/cards/#{card.id}", {
           title: "X" * 101
         }
 
@@ -243,7 +276,9 @@ describe "Cards" do
       end
 
       it "returns validation errors when status is invalid" do
-        post "/cards/#{@card.id}", {
+        card
+        
+        post "/cards/#{card.id}", {
           status: "Invalid Status"
         }
 
@@ -270,8 +305,10 @@ describe "Cards" do
     before do
       Comment.dataset.delete
       Card.dataset.delete
-
-      @card = Card.create(
+    end
+    
+    let(:card) do
+      Card.create(
         title: "Card to Delete",
         description: "This card will be deleted",
         status: "Todo"
@@ -280,18 +317,22 @@ describe "Cards" do
 
     context "when card exists" do
       it "deletes the card" do
-        post "/cards/#{@card.id}/delete"
+        # Access card via let
+        card
+        card_id = card.id
+        
+        post "/cards/#{card.id}/delete"
 
         expect(last_response.status).to eq 200
 
         expect(resp[:message]).to eq "Card deleted successfully"
-        expect(resp[:card][:id]).to eq @card.id
+        expect(resp[:card][:id]).to eq card_id
         expect(resp[:card][:title]).to eq "Card to Delete"
         expect(resp[:card][:description]).to eq "This card will be deleted"
         expect(resp[:card][:status]).to eq "Todo"
 
         # Verify that the card was actually deleted from the database
-        expect(Card[@card.id]).to be_nil
+        expect(Card[card_id]).to be_nil
       end
     end
 

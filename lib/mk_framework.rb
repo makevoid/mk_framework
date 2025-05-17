@@ -37,7 +37,7 @@ module MK
       attr_accessor :nested_resources
     end
 
-    # Implement the Roda application pattern correctly
+    # load routes when the MK Framework application is inherited
     def self.inherited(subclass)
       super
       subclass.routes_path = 'routes'
@@ -67,6 +67,49 @@ module MK
       end
     end
 
+    ROUTES_MAIN = -> (controller_name:, handler_name:, r:) {
+      if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
+        controller = Object.const_get(controller_name).new
+        # puts "Controller: #{controller_name} -- Handler: #{handler_name}" # DEBUG
+        result = controller.execute(r)
+        handler = Object.const_get(handler_name).new(result)
+        handler.execute(r)
+      else
+        response.status = 404
+        { error: "#{handler_name} Not Found" }
+      end
+    }
+
+    ROUTES_NESTED = -> (nested_resources:, resource_name:, id:, r:) {
+      if nested_resources[resource_name] && !nested_resources[resource_name].empty?
+        nested_resources[resource_name].each do |nested_resource|
+          r.on nested_resource do
+            # GET /resource/:id/nested_resource - Index of nested resources
+            r.is do
+              r.get do
+                controller_name = "#{nested_resource.capitalize}IndexController"
+                handler_name = "#{nested_resource.capitalize}IndexHandler"
+                param_name = "#{singularize(resource_name)}_id"
+                r.params[param_name] = id
+
+                MAIN_ROUTE.(controller_name: controller_name, handler_name: handler_name, r: r)
+              end
+
+              # POST /resource/:id/nested_resource - Create nested resource
+              r.post do
+                controller_name = "#{nested_resource.capitalize}CreateController"
+                handler_name = "#{nested_resource.capitalize}CreateHandler"
+                param_name = "#{singularize(resource_name)}_id"
+                r.params[param_name] = id
+
+                MAIN_ROUTE.(controller_name: controller_name, handler_name: handler_name, r: r)
+              end
+            end
+          end
+        end
+      end
+    }
+
     # Register routes for a specific resource
     def self.register_resource_routes(resource_name)
       controllers_dir = File.join(routes_path, resource_name, 'controllers')
@@ -83,12 +126,12 @@ module MK
 
       # Get the current route block
       current_route_block = @route_block
-
+      # p current_route_block
 
       # Create a new route block that includes our resource routes
       route do |r|
         # First evaluate the existing routes
-        result = instance_exec(r, &current_route_block) if current_route_block
+        instance_exec(r, &current_route_block)
 
         # Then add our resource routes
         r.on resource_name do
@@ -98,17 +141,7 @@ module MK
               controller_name = "#{resource_name.capitalize}IndexController"
               handler_name = "#{resource_name.capitalize}IndexHandler"
 
-              if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
-                controller = Object.const_get(controller_name).new
-                # puts "Controller: #{controller_name} -- Handler: #{handler_name}" # DEBUG
-                result = controller.execute(r)
-
-                handler = Object.const_get(handler_name).new(result)
-                handler.execute(r)
-              else
-                response.status = 404
-                { error: "#{handler_name} Not Found" }
-              end
+              ROUTES_MAIN.(controller_name: controller_name, handler_name: handler_name, r: r)
             end
 
             # Create route
@@ -116,17 +149,7 @@ module MK
               controller_name = "#{resource_name.capitalize}CreateController"
               handler_name = "#{resource_name.capitalize}CreateHandler"
 
-              if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
-                controller = Object.const_get(controller_name).new
-                # puts "Controller: #{controller_name} -- Handler: #{handler_name}" # DEBUG
-                result = controller.execute(r)
-
-                handler = Object.const_get(handler_name).new(result)
-                handler.execute(r)
-              else
-                response.status = 404
-                { error: "#{handler_name} Not Found" }
-              end
+              ROUTES_MAIN.(controller_name: controller_name, handler_name: handler_name, r: r)
             end
           end
 
@@ -135,91 +158,23 @@ module MK
             r.params['id'] = id
 
             # Handle nested resources first
-            nr = self.class.nested_resources || {}
-            if nr[resource_name] && !nr[resource_name].empty?
-              nr[resource_name].each do |nested_resource|
-                r.on nested_resource do
-                  # GET /resource/:id/nested_resource - Index of nested resources
-                  r.is do
-                    r.get do
-                      controller_name = "#{nested_resource.capitalize}IndexController"
-                      handler_name = "#{nested_resource.capitalize}IndexHandler"
-                      param_name = "#{singularize(resource_name)}_id"
-                      r.params[param_name] = id
+            nested_resources = self.class.nested_resources || {}
+            ROUTES_NESTED.(nested_resources: nested_resources, resource_name: resource_name, id: id, r: r)
 
-                      if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
-                        # puts "Controller: #{controller_name} -- Handler: #{handler_name}" # DEBUG
-                        controller = Object.const_get(controller_name).new
-                        result = controller.execute(r)
 
-                        handler = Object.const_get(handler_name).new(result)
-                        handler.execute(r)
-                      else
-                        response.status = 404
-                        { error: "#{handler_name} Not Found" }
-                      end
-                    end
-
-                    # POST /resource/:id/nested_resource - Create nested resource
-                    r.post do
-                      controller_name = "#{nested_resource.capitalize}CreateController"
-                      handler_name = "#{nested_resource.capitalize}CreateHandler"
-                      param_name = "#{singularize(resource_name)}_id"
-                      r.params[param_name] = id
-
-                      if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
-                        # puts "Controller: #{controller_name} -- Handler: #{handler_name}" # DEBUG
-                        controller = Object.const_get(controller_name).new
-                        result = controller.execute(r)
-
-                        handler = Object.const_get(handler_name).new(result)
-                        handler.execute(r)
-                      else
-                        response.status = 404
-                        { error: "#{handler_name} Not Found" }
-                      end
-                    end
-                  end
-                end
-              end
-            end
-
-            # Regular resource routes
             r.is do
-              # Store id in params
-
               r.get do
                 controller_name = "#{resource_name.capitalize}ShowController"
                 handler_name = "#{resource_name.capitalize}ShowHandler"
 
-                if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
-                  # puts "Controller: #{controller_name} -- Handler: #{handler_name}" # DEBUG
-                  controller = Object.const_get(controller_name).new
-                  result = controller.execute(r)
-
-                  handler = Object.const_get(handler_name).new(result)
-                  handler.execute(r)
-                else
-                  response.status = 404
-                  { error: "#{handler_name} Not Found" }
-                end
+                ROUTES_MAIN.(controller_name: controller_name, handler_name: handler_name, r: r)
               end
 
               r.post do
                 controller_name = "#{resource_name.capitalize}UpdateController"
                 handler_name = "#{resource_name.capitalize}UpdateHandler"
 
-                if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
-                  # puts "Controller: #{controller_name} -- Handler: #{handler_name}" # DEBUG
-                  controller = Object.const_get(controller_name).new
-                  result = controller.execute(r)
-
-                  handler = Object.const_get(handler_name).new(result)
-                  handler.execute(r)
-                else
-                  response.status = 404
-                  { error: "#{handler_name} Not Found" }
-                end
+                ROUTES_MAIN.(controller_name: controller_name, handler_name: handler_name, r: r)
               end
             end
 
@@ -228,17 +183,7 @@ module MK
               controller_name = "#{resource_name.capitalize}DeleteController"
               handler_name = "#{resource_name.capitalize}DeleteHandler"
 
-              if Object.const_defined?(controller_name) && Object.const_defined?(handler_name)
-                # puts "Controller: #{controller_name} -- Handler: #{handler_name}" # DEBUG
-                controller = Object.const_get(controller_name).new
-                result = controller.execute(r)
-
-                handler = Object.const_get(handler_name).new(result)
-                handler.execute(r)
-              else
-                response.status = 404
-                { error: "#{handler_name} Not Found" }
-              end
+              ROUTES_MAIN.(controller_name: controller_name, handler_name: handler_name, r: r)
             end
           end
         end
