@@ -1,1 +1,17 @@
-DIRS = %w[sample_app1 sample_app2 sample_app3]
+DIRS = %w(sample_app1 sample_app2 sample_app3 sample_app4 sample_app5)
+
+def run_tests
+  DIRS.each do |dir|
+    puts "-" * 80
+    puts "Running tests for #{dir}..."
+    puts "-" * 80
+    system("cd ./#{dir} && bundle exec rake spec")
+  end
+end
+
+desc 'Run tests for all sample apps'
+task :test do
+  run_tests
+end
+
+task default: :test
