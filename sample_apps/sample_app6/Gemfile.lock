@@ -15,7 +15,7 @@ GEM
     rackup (2.2.1)
       rack (>= 3)
     rake (13.2.1)
-    roda (3.91.0)
+    roda (3.92.0)
       rack
     rspec (3.13.0)
       rspec-core (~> 3.13.0)
