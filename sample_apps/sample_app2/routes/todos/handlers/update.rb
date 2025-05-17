@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
 class TodosUpdateHandler < MK::Handler
-  route do |r|
+  handler do |r|
     success do |r|
       {
         message: "Todo updated",
         todo: model.to_hash,
-      } 
+      }
     end
 
     error do |r|
