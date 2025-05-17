@@ -4,6 +4,7 @@ require 'roda'
 require 'sequel'
 require 'logger'
 require 'json'
+require 'yaml'
 require 'fileutils'
 
 # TODO: REFACTOR THIS
@@ -23,29 +24,29 @@ module MK
     plugin :error_handler do |e|
       # Create a detailed error object
       error_details = {
-        error: e.class.name,
-        message: e.message,
-        timestamp: Time.now.iso8601,
         request_info: {
           path: request.path,
           method: request.request_method,
           params: request.params.reject { |k, _| k.to_s.include?('password') }  # Sanitize sensitive data
         },
         trace: {
-          full: e.backtrace,
-          relevant: e.backtrace.select { |line| line.include?('mk_framework') || line.include?('app/') }
+          relevant: e.backtrace.reject { |line| line.include?('forwardable') || line.include?('roda') || line.include?('rack-test') || line.include?('rspec')  }
         }
       }
-      
+
       # Log the detailed error
       if defined?(logger) && logger.respond_to?(:error)
-        logger.error("ERROR: #{e.class.name} - #{e.message}")
-        logger.error(error_details.to_json)
+        logger.error "ERROR: #{e.class.name}"
+        logger.error e.message
+        logger.error "Stacktrace and Info:"
+        logger.error JSON.pretty_generate error_details
       else
-        puts "ERROR: #{e.class.name} - #{e.message}"
-        puts JSON.pretty_generate(error_details)
+        puts "ERROR: #{e.class.name}"
+        puts e.message
+        puts "Stacktrace and Info:"
+        puts JSON.pretty_generate error_details
       end
-      
+
       # In development mode, return the detailed error
       if ENV['RACK_ENV'] == 'development'
         response.status = case e
@@ -99,6 +100,22 @@ module MK
 
       # Load the routes for this application class
       subclass.load_routes
+    end
+
+    # Set up a custom logger
+    def self.setup_logger(log_path = nil)
+      log_path ||= ENV['RACK_ENV'] == 'test' ? StringIO.new : 'log/mk_framework.log'
+      log_dir = File.dirname(log_path) unless log_path.is_a?(StringIO)
+      FileUtils.mkdir_p(log_dir) if log_dir && !File.directory?(log_dir)
+
+      logger = Logger.new(log_path)
+      logger.formatter = proc do |severity, datetime, progname, msg|
+        formatted_datetime = datetime.strftime("%Y-%m-%d %H:%M:%S.%L")
+        "[#{formatted_datetime}] #{severity}: #{msg}\n"
+      end
+
+      define_singleton_method(:logger) { logger }
+      logger
     end
 
     # Class method to load routes based on the directory structure
@@ -306,61 +323,73 @@ module MK
     end
 
     def execute(r)
-      # Execute the handler's route block
-      result = instance_exec(r, &route_block)
+      begin
+        # Execute the handler's route block
+        result = instance_exec(r, &route_block)
 
-      # If the result is a model object, convert to hash (JSON-compatible)
-      if result.is_a?(Sequel::Model)
-        return result
-      end
+        # If the result is a model object, convert to hash (JSON-compatible)
+        if result.is_a?(Sequel::Model)
+          return result
+        end
 
-      # If the result is a raw model (for index/show actions)
-      if (self.class.name.end_with?('IndexHandler') || self.class.name.end_with?('ShowHandler'))
-        return result
-      end
+        # If the result is a raw model (for index/show actions)
+        if (self.class.name.end_with?('IndexHandler') || self.class.name.end_with?('ShowHandler'))
+          return result
+        end
 
-      # For other cases (create, update, delete with success/failure blocks)
-      if @success_block && @fail_block
-        begin
-          unless self.class.name.end_with?('DeleteHandler')
-            if model.save
-              # puts "SUCCESS" # DEBUG count successes
-              instance_exec(r, &@success_block)
-            else
-              # puts "FAIL" # DEBUG count fails
-              instance_exec(r, &@fail_block)
-            end
-          else
-            if model.is_a?(Sequel::Model)
-              if model.delete
+        # For other cases (create, update, delete with success/failure blocks)
+        if @success_block && @fail_block
+          begin
+            unless self.class.name.end_with?('DeleteHandler')
+              if model.save
+                # puts "SUCCESS" # DEBUG count successes
                 instance_exec(r, &@success_block)
               else
+                # puts "FAIL" # DEBUG count fails
                 instance_exec(r, &@fail_block)
               end
             else
-              puts "ERROR"
-              puts "You need to return a sequel model from the DeleteController"
-              return {
-                error: "Server error",
-                message: "Internal resource error"
-              }
+              if model.is_a?(Sequel::Model)
+                if model.delete
+                  instance_exec(r, &@success_block)
+                else
+                  instance_exec(r, &@fail_block)
+                end
+              else
+                puts "ERROR"
+                puts "You need to return a sequel model from the DeleteController"
+                return {
+                  error: "Server error",
+                  message: "Internal resource error"
+                }
+              end
             end
+          rescue Sequel::ValidationFailed => e
+            instance_exec(r, &@fail_block)
+          rescue StandardError => e
+            # Handle other errors
+            r.response.status = 500
+            puts "ERROR:"
+            puts e.message
+            puts e.backtrace.join("\n")
+            return {
+              error: "Server error",
+              message: e.message
+            }
           end
-        rescue Sequel::ValidationFailed => e
-          instance_exec(r, &@fail_block)
-        rescue StandardError => e
-          # Handle other errors
-          r.response.status = 500
-          puts "ERROR:"
-          puts e.message
-          puts e.backtrace.join("\n")
-          return {
-            error: "Server error",
-            message: e.message
+        else
+          raise "Success and Error blocks are required for create, update, and delete actions"
+        end
+      rescue StandardError => e
+        # Add more context to the error
+        e.define_singleton_method(:additional_info) do
+          {
+            handler_class: self.class.name,
+            model_class: model ? model.class.name : nil,
+            model_state: model.is_a?(Sequel::Model) ? model.values : nil
           }
         end
-      else
-        raise "Success and Error blocks are required for create, update, and delete actions"
+        raise e  # Re-raise to be caught by the application error handler
       end
     end
 

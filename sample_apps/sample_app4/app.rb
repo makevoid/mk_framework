@@ -36,4 +36,6 @@ require_relative 'models/comment'
 class KanbanApp < MK::Application
   # Register comments as a nested resource of cards
   register_nested_resource 'cards', 'comments'
+
+  # setup_logger
 end
