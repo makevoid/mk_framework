@@ -3,6 +3,6 @@
 class CardsIndexHandler < MK::Handler
   route do |r|
     r.response.status = 200
-    models.map(&:to_hash)
+    model.map(&:to_hash)
   end
 end
