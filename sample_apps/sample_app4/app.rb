@@ -6,21 +6,22 @@ require 'roda'
 require_relative '../../lib/mk_framework'
 
 # Set up database connection
-DB = Sequel.connect('sqlite://blog.db')
+DB = Sequel.connect('sqlite://kanban.db')
 
-# Create posts table
-DB.create_table :posts do
+# Create cards table
+DB.create_table :cards do
   primary_key :id
   String :title, null: false
   String :description, text: true
+  String :status, default: 'Todo'
   DateTime :created_at, default: Sequel::CURRENT_TIMESTAMP
   DateTime :updated_at, default: Sequel::CURRENT_TIMESTAMP
-end unless DB.table_exists?(:posts)
+end unless DB.table_exists?(:cards)
 
 # Create comments table
 DB.create_table :comments do
   primary_key :id
-  foreign_key :post_id, :posts, on_delete: :cascade, null: false
+  foreign_key :card_id, :cards, on_delete: :cascade, null: false
   String :content, null: false, text: true
   String :author
   DateTime :created_at, default: Sequel::CURRENT_TIMESTAMP
@@ -28,11 +29,11 @@ DB.create_table :comments do
 end unless DB.table_exists?(:comments)
 
 # Require models
-require_relative 'models/post'
+require_relative 'models/card'
 require_relative 'models/comment'
 
 # Create application instance
-class BlogApp < MK::Application
-  # Register comments as a nested resource of posts
-  register_nested_resource 'posts', 'comments'
+class KanbanApp < MK::Application
+  # Register comments as a nested resource of cards
+  register_nested_resource 'cards', 'comments'
 end

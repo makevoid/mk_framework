@@ -2,73 +2,79 @@
 
 require 'spec_helper'
 
-describe "Posts" do
-  describe "GET /posts" do
+describe "Cards" do
+  describe "GET /cards" do
     before do
       Comment.dataset.delete
-      Post.dataset.delete
+      Card.dataset.delete
 
-      @post1 = Post.create(
-        title: "First Post",
-        description: "This is the first test blog post"
+      @card1 = Card.create(
+        title: "First Task",
+        description: "This is the first test task",
+        status: "Todo"
       )
 
-      @post2 = Post.create(
-        title: "Second Post",
-        description: "This is the second test blog post"
+      @card2 = Card.create(
+        title: "Second Task",
+        description: "This is the second test task",
+        status: "In Progress"
       )
     end
 
-    it "returns all posts" do
-      get '/posts'
+    it "returns all cards" do
+      get '/cards'
 
       expect(last_response.status).to eq 200
 
       expect(resp.length).to eq 2
 
-      expect(resp[0][:id]).to eq @post1.id
-      expect(resp[0][:title]).to eq "First Post"
-      expect(resp[0][:description]).to eq "This is the first test blog post"
+      expect(resp[0][:id]).to eq @card1.id
+      expect(resp[0][:title]).to eq "First Task"
+      expect(resp[0][:description]).to eq "This is the first test task"
+      expect(resp[0][:status]).to eq "Todo"
 
-      expect(resp[1][:id]).to eq @post2.id
-      expect(resp[1][:title]).to eq "Second Post"
-      expect(resp[1][:description]).to eq "This is the second test blog post"
+      expect(resp[1][:id]).to eq @card2.id
+      expect(resp[1][:title]).to eq "Second Task"
+      expect(resp[1][:description]).to eq "This is the second test task"
+      expect(resp[1][:status]).to eq "In Progress"
     end
   end
 
-  describe "GET /posts/:id" do
+  describe "GET /cards/:id" do
     before do
-      Post.dataset.delete
+      Card.dataset.delete
       Comment.dataset.delete
 
-      @post = Post.create(
-        title: "Test Post",
-        description: "This is a test blog post"
+      @card = Card.create(
+        title: "Test Card",
+        description: "This is a test card",
+        status: "Todo"
       )
 
       @comment1 = Comment.create(
-        post_id: @post.id,
+        card_id: @card.id,
         content: "First comment",
         author: "Alice"
       )
 
       @comment2 = Comment.create(
-        post_id: @post.id,
+        card_id: @card.id,
         content: "Second comment",
         author: "Bob"
       )
     end
 
-    context "when post exists" do
-      it "returns the post with its comments" do
-        get "/posts/#{@post.id}"
+    context "when card exists" do
+      it "returns the card with its comments" do
+        get "/cards/#{@card.id}"
 
         expect(last_response.status).to eq 200
 
-        # Check post data
-        expect(resp[:post][:id]).to eq @post.id
-        expect(resp[:post][:title]).to eq "Test Post"
-        expect(resp[:post][:description]).to eq "This is a test blog post"
+        # Check card data
+        expect(resp[:card][:id]).to eq @card.id
+        expect(resp[:card][:title]).to eq "Test Card"
+        expect(resp[:card][:description]).to eq "This is a test card"
+        expect(resp[:card][:status]).to eq "Todo"
 
         # Check comments
         expect(resp[:comments].length).to eq 2
@@ -83,40 +89,42 @@ describe "Posts" do
       end
     end
 
-    context "when post does not exist" do
+    context "when card does not exist" do
       it "returns a 404 error" do
-        get "/posts/999999"
+        get "/cards/999999"
 
         expect(last_response.status).to eq 404
-        expect(resp[:error]).to eq "Post not found"
+        expect(resp[:error]).to eq "Card not found"
       end
     end
   end
 
-  describe "POST /posts" do
+  describe "POST /cards" do
     before do
       Comment.dataset.delete
-      Post.dataset.delete
+      Card.dataset.delete
     end
     context "with valid parameters" do
-      it "creates a new post" do
-        post '/posts', {
-          title: "Test Post",
-          description: "This is a test blog post"
+      it "creates a new card" do
+        post '/cards', {
+          title: "Test Card",
+          description: "This is a test card",
+          status: "Todo"
         }
 
         expect(last_response.status).to eq 201
 
-        expect(resp[:message]).to eq "Post created"
-        expect(resp[:post][:title]).to eq "Test Post"
-        expect(resp[:post][:description]).to eq "This is a test blog post"
+        expect(resp[:message]).to eq "Card created"
+        expect(resp[:card][:title]).to eq "Test Card"
+        expect(resp[:card][:description]).to eq "This is a test card"
+        expect(resp[:card][:status]).to eq "Todo"
       end
     end
 
     context "with invalid parameters" do
       it "returns validation errors when title is missing" do
-        post '/posts', {
-          description: "This post has no title"
+        post '/cards', {
+          description: "This card has no title"
         }
 
         expect(last_response.status).to eq 422
@@ -126,9 +134,9 @@ describe "Posts" do
       end
 
       it "returns validation errors when title is too long" do
-        post '/posts', {
+        post '/cards', {
           title: "X" * 101,
-          description: "This post has a title that is too long"
+          description: "This card has a title that is too long"
         }
 
         expect(last_response.status).to eq 422
@@ -136,63 +144,95 @@ describe "Posts" do
         expect(resp[:error]).to eq "Validation failed"
         expect(resp[:details]).to have_key :title
       end
+
+      it "returns validation errors when status is invalid" do
+        post '/cards', {
+          title: "Invalid Status Card",
+          description: "This card has an invalid status",
+          status: "Invalid"
+        }
+
+        expect(last_response.status).to eq 422
+
+        expect(resp[:error]).to eq "Validation failed"
+        expect(resp[:details]).to have_key :status
+      end
     end
   end
 
-  describe "PUT /posts/:id" do
+  describe "PUT /cards/:id" do
     before do
       Comment.dataset.delete
-      Post.dataset.delete
+      Card.dataset.delete
 
-      @post = Post.create(
+      @card = Card.create(
         title: "Original Title",
-        description: "Original Description"
+        description: "Original Description",
+        status: "Todo"
       )
     end
 
-    context "when post exists" do
-      it "updates the post title" do
-        post "/posts/#{@post.id}", {
+    context "when card exists" do
+      it "updates the card title" do
+        post "/cards/#{@card.id}", {
           title: "Updated Title"
         }
 
         expect(last_response.status).to eq 200
 
-        expect(resp[:message]).to eq "Post updated"
-        expect(resp[:post][:id]).to eq @post.id
-        expect(resp[:post][:title]).to eq "Updated Title"
-        expect(resp[:post][:description]).to eq "Original Description"
+        expect(resp[:message]).to eq "Card updated"
+        expect(resp[:card][:id]).to eq @card.id
+        expect(resp[:card][:title]).to eq "Updated Title"
+        expect(resp[:card][:description]).to eq "Original Description"
+        expect(resp[:card][:status]).to eq "Todo"
       end
 
-      it "updates the post description" do
-        post "/posts/#{@post.id}", {
+      it "updates the card description" do
+        post "/cards/#{@card.id}", {
           description: "Updated Description"
         }
 
         expect(last_response.status).to eq 200
 
-        expect(resp[:message]).to eq "Post updated"
-        expect(resp[:post][:id]).to eq @post.id
-        expect(resp[:post][:title]).to eq "Original Title"
-        expect(resp[:post][:description]).to eq "Updated Description"
+        expect(resp[:message]).to eq "Card updated"
+        expect(resp[:card][:id]).to eq @card.id
+        expect(resp[:card][:title]).to eq "Original Title"
+        expect(resp[:card][:description]).to eq "Updated Description"
+        expect(resp[:card][:status]).to eq "Todo"
       end
 
-      it "updates multiple fields at once" do
-        post "/posts/#{@post.id}", {
-          title: "Completely Updated",
-          description: "New Description"
+      it "updates the card status" do
+        post "/cards/#{@card.id}", {
+          status: "In Progress"
         }
 
         expect(last_response.status).to eq 200
 
-        expect(resp[:message]).to eq "Post updated"
-        expect(resp[:post][:id]).to eq @post.id
-        expect(resp[:post][:title]).to eq "Completely Updated"
-        expect(resp[:post][:description]).to eq "New Description"
+        expect(resp[:message]).to eq "Card updated"
+        expect(resp[:card][:id]).to eq @card.id
+        expect(resp[:card][:title]).to eq "Original Title"
+        expect(resp[:card][:description]).to eq "Original Description"
+        expect(resp[:card][:status]).to eq "In Progress"
+      end
+
+      it "updates multiple fields at once" do
+        post "/cards/#{@card.id}", {
+          title: "Completely Updated",
+          description: "New Description",
+          status: "Done"
+        }
+
+        expect(last_response.status).to eq 200
+
+        expect(resp[:message]).to eq "Card updated"
+        expect(resp[:card][:id]).to eq @card.id
+        expect(resp[:card][:title]).to eq "Completely Updated"
+        expect(resp[:card][:description]).to eq "New Description"
+        expect(resp[:card][:status]).to eq "Done"
       end
 
       it "returns validation errors when title is too long" do
-        post "/posts/#{@post.id}", {
+        post "/cards/#{@card.id}", {
           title: "X" * 101
         }
 
@@ -201,54 +241,67 @@ describe "Posts" do
         expect(resp[:error]).to eq "Validation failed!"
         expect(resp[:details]).to have_key :title
       end
+
+      it "returns validation errors when status is invalid" do
+        post "/cards/#{@card.id}", {
+          status: "Invalid Status"
+        }
+
+        expect(last_response.status).to eq 400
+
+        expect(resp[:error]).to eq "Validation failed!"
+        expect(resp[:details]).to have_key :status
+      end
     end
 
-    context "when post does not exist" do
+    context "when card does not exist" do
       it "returns a 404 error" do
-        post "/posts/999999", {
+        post "/cards/999999", {
           title: "Updated Title"
         }
 
         expect(last_response.status).to eq 404
-        expect(resp[:error]).to eq "Post not found"
+        expect(resp[:error]).to eq "Card not found"
       end
     end
   end
 
-  describe "DELETE /posts/:id" do
+  describe "DELETE /cards/:id" do
     before do
       Comment.dataset.delete
-      Post.dataset.delete
+      Card.dataset.delete
 
-      @post = Post.create(
-        title: "Post to Delete",
-        description: "This post will be deleted"
+      @card = Card.create(
+        title: "Card to Delete",
+        description: "This card will be deleted",
+        status: "Todo"
       )
     end
 
-    context "when post exists" do
-      it "deletes the post" do
-        post "/posts/#{@post.id}/delete"
+    context "when card exists" do
+      it "deletes the card" do
+        post "/cards/#{@card.id}/delete"
 
         expect(last_response.status).to eq 200
 
-        expect(resp[:message]).to eq "Post deleted successfully"
-        expect(resp[:post][:id]).to eq @post.id
-        expect(resp[:post][:title]).to eq "Post to Delete"
-        expect(resp[:post][:description]).to eq "This post will be deleted"
+        expect(resp[:message]).to eq "Card deleted successfully"
+        expect(resp[:card][:id]).to eq @card.id
+        expect(resp[:card][:title]).to eq "Card to Delete"
+        expect(resp[:card][:description]).to eq "This card will be deleted"
+        expect(resp[:card][:status]).to eq "Todo"
 
-        # Verify that the post was actually deleted from the database
-        expect(Post[@post.id]).to be_nil
+        # Verify that the card was actually deleted from the database
+        expect(Card[@card.id]).to be_nil
       end
     end
 
-    context "when post does not exist" do
+    context "when card does not exist" do
       it "returns a 404 error" do
-        post "/posts/999999/delete"
+        post "/cards/999999/delete"
 
         expect(last_response.status).to eq 404
         expect(resp).to have_key :error
-        expect(resp[:error]).to eq "Post not found"
+        expect(resp[:error]).to eq "Card not found"
       end
     end
   end

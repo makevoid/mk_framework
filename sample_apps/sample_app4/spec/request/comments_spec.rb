@@ -6,40 +6,41 @@ describe "Comments" do
   before do
     # Clean up the database
     Comment.dataset.delete
-    Post.dataset.delete
+    Card.dataset.delete
 
-    # Create a test post
-    @post = Post.create(
-      title: "Test Post",
-      description: "This is a test post for comments"
+    # Create a test card
+    @card = Card.create(
+      title: "Test Card",
+      description: "This is a test card for comments",
+      status: "Todo"
     )
   end
 
-  describe "GET /posts/:post_id/comments" do
+  describe "GET /cards/:card_id/comments" do
     before do
-      # Add some comments to the post
+      # Add some comments to the card
       @comment1 = Comment.create(
-        post_id: @post.id,
+        card_id: @card.id,
         content: "First comment",
         author: "Alice"
       )
 
       @comment2 = Comment.create(
-        post_id: @post.id,
+        card_id: @card.id,
         content: "Second comment",
         author: "Bob"
       )
 
-      # Add a comment to a non-existent post (should not be returned)
+      # Add a comment to a non-existent card (should not be returned)
       @comment3 = Comment.create(
-        post_id: @post.id + 1,
-        content: "Comment on another post",
+        card_id: @card.id + 1,
+        content: "Comment on another card",
         author: "Charlie"
       ) rescue nil
     end
 
-    it "returns all comments for a post" do
-      get "/posts/#{@post.id}/comments"
+    it "returns all comments for a card" do
+      get "/cards/#{@card.id}/comments"
 
       expect(last_response.status).to eq 200
       expect(resp.length).to eq 2
@@ -53,18 +54,18 @@ describe "Comments" do
       expect(resp[1][:author]).to eq "Bob"
     end
 
-    it "returns a 404 error for a non-existent post" do
-      get "/posts/999999/comments"
+    it "returns a 404 error for a non-existent card" do
+      get "/cards/999999/comments"
 
       expect(last_response.status).to eq 404
-      expect(resp[:error]).to eq "Post not found"
+      expect(resp[:error]).to eq "Card not found"
     end
   end
 
   describe "GET /comments/:id" do
     before do
       @comment = Comment.create(
-        post_id: @post.id,
+        card_id: @card.id,
         content: "Test comment",
         author: "Alice"
       )
@@ -77,7 +78,7 @@ describe "Comments" do
       expect(resp[:id]).to eq @comment.id
       expect(resp[:content]).to eq "Test comment"
       expect(resp[:author]).to eq "Alice"
-      expect(resp[:post_id]).to eq @post.id
+      expect(resp[:card_id]).to eq @card.id
     end
 
     it "returns a 404 error for a non-existent comment" do
@@ -88,9 +89,9 @@ describe "Comments" do
     end
   end
 
-  describe "POST /posts/:post_id/comments" do
+  describe "POST /cards/:card_id/comments" do
     it "creates a new comment" do
-      post "/posts/#{@post.id}/comments", {
+      post "/cards/#{@card.id}/comments", {
         content: "New comment",
         author: "Alice"
       }
@@ -99,11 +100,11 @@ describe "Comments" do
       expect(resp[:message]).to eq "Comment created"
       expect(resp[:comment][:content]).to eq "New comment"
       expect(resp[:comment][:author]).to eq "Alice"
-      expect(resp[:comment][:post_id]).to eq @post.id
+      expect(resp[:comment][:card_id]).to eq @card.id
     end
 
     it "creates a comment without an author" do
-      post "/posts/#{@post.id}/comments", {
+      post "/cards/#{@card.id}/comments", {
         content: "Anonymous comment"
       }
 
@@ -114,7 +115,7 @@ describe "Comments" do
     end
 
     it "returns validation errors when content is missing" do
-      post "/posts/#{@post.id}/comments", {
+      post "/cards/#{@card.id}/comments", {
         author: "Alice"
       }
 
@@ -123,21 +124,21 @@ describe "Comments" do
       expect(resp[:details]).to have_key :content
     end
 
-    it "returns a 404 error for a non-existent post" do
-      post "/posts/999999/comments", {
-        content: "Comment on non-existent post",
+    it "returns a 404 error for a non-existent card" do
+      post "/cards/999999/comments", {
+        content: "Comment on non-existent card",
         author: "Alice"
       }
 
       expect(last_response.status).to eq 404
-      expect(resp[:error]).to eq "Post not found"
+      expect(resp[:error]).to eq "Card not found"
     end
   end
 
   describe "PUT /comments/:id" do
     before do
       @comment = Comment.create(
-        post_id: @post.id,
+        card_id: @card.id,
         content: "Original content",
         author: "Original author"
       )
@@ -193,7 +194,7 @@ describe "Comments" do
   describe "DELETE /comments/:id" do
     before do
       @comment = Comment.create(
-        post_id: @post.id,
+        card_id: @card.id,
         content: "Comment to delete",
         author: "Alice"
       )

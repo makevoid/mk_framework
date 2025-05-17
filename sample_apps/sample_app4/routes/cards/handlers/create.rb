@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-class PostsCreateHandler < MK::Handler
+class CardsCreateHandler < MK::Handler
   route do |r|
     success do |r|
       r.response.status = 201
       {
-        message: "Post created",
-        post: model.to_hash,
+        message: "Card created",
+        card: model.to_hash,
       }
     end
 
