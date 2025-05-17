@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class CardsShowHandler < MK::Handler
-  route do |r|
+  handler do |r|
     success do |r|
       r.response.status = 200
       { card: model.to_hash }

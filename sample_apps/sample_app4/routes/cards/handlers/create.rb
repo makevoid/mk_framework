@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class CardsCreateHandler < MK::Handler
-  route do |r|
+  handler do |r|
     success do |r|
       r.response.status = 201
       {
