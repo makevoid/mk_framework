@@ -8,7 +8,7 @@ require "json"
 # require_relative '../app'
 require_relative '../app'
 
-require_relative '../../spec_lib/mk_framework_spec_helpers'
+require_relative '../../../lib_spec/mk_framework_spec_helpers'
 
 # Configure RSpec
 RSpec.configure do |config|
