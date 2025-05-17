@@ -295,8 +295,14 @@ module MK
 
     class << self
       def route(&block)
-        # puts "DEFINING METHOD ROUTE BLOCK" # DEBUG
         define_method(:route_block) do
+          block
+        end
+      end
+      
+      # New method for handler class definition
+      def handler(&block)
+        define_method(:handler_block) do
           block
         end
       end
@@ -324,17 +330,23 @@ module MK
 
     def execute(r)
       begin
-        # Execute the handler's route block
+        # Try to execute the handler_block if it exists (new style)
+        if respond_to?(:handler_block)
+          return instance_exec(r, &handler_block)
+        end
+        
+        # Otherwise, fall back to route_block execution (old style)
         result = instance_exec(r, &route_block)
 
-        # If the result is a model object, convert to hash (JSON-compatible)
-        if result.is_a?(Sequel::Model)
+        # If the result is a specific value returned from the route_block, use that
+        if result != self
           return result
         end
-
-        # If the result is a raw model (for index/show actions)
-        if (self.class.name.end_with?('IndexHandler') || self.class.name.end_with?('ShowHandler'))
-          return result
+        
+        # Handle different types of handlers
+        if self.class.name.end_with?('IndexHandler') || self.class.name.end_with?('ShowHandler')
+          # For index and show handlers, return the model directly
+          return model
         end
 
         # For other cases (create, update, delete with success/failure blocks)
@@ -342,18 +354,16 @@ module MK
           begin
             unless self.class.name.end_with?('DeleteHandler')
               if model.save
-                # puts "SUCCESS" # DEBUG count successes
-                instance_exec(r, &@success_block)
+                return instance_exec(r, &@success_block)
               else
-                # puts "FAIL" # DEBUG count fails
-                instance_exec(r, &@fail_block)
+                return instance_exec(r, &@fail_block)
               end
             else
               if model.is_a?(Sequel::Model)
                 if model.delete
-                  instance_exec(r, &@success_block)
+                  return instance_exec(r, &@success_block)
                 else
-                  instance_exec(r, &@fail_block)
+                  return instance_exec(r, &@fail_block)
                 end
               else
                 puts "ERROR"
@@ -365,7 +375,7 @@ module MK
               end
             end
           rescue Sequel::ValidationFailed => e
-            instance_exec(r, &@fail_block)
+            return instance_exec(r, &@fail_block)
           rescue StandardError => e
             # Handle other errors
             r.response.status = 500
@@ -378,7 +388,7 @@ module MK
             }
           end
         else
-          raise "Success and Error blocks are required for create, update, and delete actions"
+          raise "Success and Error blocks are required for create, update, and delete actions" unless self.class.name.end_with?('IndexHandler') || self.class.name.end_with?('ShowHandler')
         end
       rescue StandardError => e
         # Add more context to the error
