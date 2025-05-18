@@ -1,6 +1,6 @@
-# Todo List API
+# Calendar Events API
 
-A RESTful API for managing todo items built with the MK Framework, a lightweight Ruby web framework based on Roda.
+A RESTful API for managing calendar events built with the MK Framework, a lightweight Ruby web framework based on Roda.
 
 ## Overview
 
@@ -12,7 +12,8 @@ This application demonstrates a clean separation of concerns with a RESTful arch
 
 ## Features
 
-- Create, read, update and delete todo items
+- Create, read, update and delete calendar events
+- Support for all-day events and location information
 - Input validation
 - JSON response formatting
 - SQLite database storage
@@ -23,7 +24,7 @@ This application demonstrates a clean separation of concerns with a RESTful arch
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd sample_app2
+cd sample_app7
 
 # Install dependencies
 bundle install
@@ -38,18 +39,18 @@ The server will start on http://localhost:9292
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/todos` | GET | List all todos |
-| `/todos/:id` | GET | Get a specific todo |
-| `/todos` | POST | Create a new todo |
-| `/todos/:id` | POST | Update a todo |
-| `/todos/:id/delete` | POST | Delete a todo |
+| `/events` | GET | List all events |
+| `/events/:id` | GET | Get a specific event |
+| `/events` | POST | Create a new event |
+| `/events/:id` | POST | Update an event |
+| `/events/:id/delete` | POST | Delete an event |
 
 ### Request/Response Examples
 
-#### List all todos
+#### List all events
 
 ```
-GET /todos
+GET /events
 ```
 
 Response:
@@ -57,103 +58,138 @@ Response:
 [
   {
     "id": 1,
-    "title": "Buy groceries",
-    "description": "Milk, eggs, bread",
-    "completed": false,
-    "created_at": "2023-01-01T12:00:00Z",
-    "updated_at": "2023-01-01T12:00:00Z"
+    "title": "Team Meeting",
+    "description": "Weekly team sync",
+    "start_time": "2024-05-20T10:00:00Z",
+    "end_time": "2024-05-20T11:00:00Z",
+    "location": "Conference Room A",
+    "all_day": false,
+    "created_at": "2024-05-18T14:00:00Z",
+    "updated_at": "2024-05-18T14:00:00Z"
   },
   {
     "id": 2,
-    "title": "Finish project",
-    "description": "Complete the todo API",
-    "completed": true,
-    "created_at": "2023-01-02T10:00:00Z",
-    "updated_at": "2023-01-02T15:30:00Z"
+    "title": "Company Holiday",
+    "description": "Annual company day off",
+    "start_time": "2024-05-27T00:00:00Z",
+    "end_time": "2024-05-27T23:59:59Z",
+    "location": null,
+    "all_day": true,
+    "created_at": "2024-05-18T14:30:00Z",
+    "updated_at": "2024-05-18T14:30:00Z"
   }
 ]
 ```
 
-#### Get a specific todo
+#### Get a specific event
 
 ```
-GET /todos/1
-```
-
-Response:
-```json
-{
-  "id": 1,
-  "title": "Buy groceries",
-  "description": "Milk, eggs, bread",
-  "completed": false,
-  "created_at": "2023-01-01T12:00:00Z",
-  "updated_at": "2023-01-01T12:00:00Z"
-}
-```
-
-#### Create a new todo
-
-```
-POST /todos
-```
-
-Request body:
-```json
-{
-  "title": "Learn Ruby",
-  "description": "Study MK Framework",
-  "completed": false
-}
-```
-
-Response:
-```json
-{
-  "id": 3,
-  "title": "Learn Ruby",
-  "description": "Study MK Framework",
-  "completed": false,
-  "created_at": "2023-01-03T09:00:00Z",
-  "updated_at": "2023-01-03T09:00:00Z"
-}
-```
-
-#### Update a todo
-
-```
-POST /todos/1
-```
-
-Request body:
-```json
-{
-  "completed": true
-}
+GET /events/1
 ```
 
 Response:
 ```json
 {
   "id": 1,
-  "title": "Buy groceries",
-  "description": "Milk, eggs, bread",
-  "completed": true,
-  "created_at": "2023-01-01T12:00:00Z",
-  "updated_at": "2023-01-03T14:00:00Z"
+  "title": "Team Meeting",
+  "description": "Weekly team sync",
+  "start_time": "2024-05-20T10:00:00Z",
+  "end_time": "2024-05-20T11:00:00Z",
+  "location": "Conference Room A",
+  "all_day": false,
+  "created_at": "2024-05-18T14:00:00Z",
+  "updated_at": "2024-05-18T14:00:00Z"
 }
 ```
 
-#### Delete a todo
+#### Create a new event
 
 ```
-POST /todos/1/delete
+POST /events
+```
+
+Request body:
+```json
+{
+  "title": "Client Meeting",
+  "description": "Discuss project timeline",
+  "start_time": "2024-05-25T09:00:00Z",
+  "end_time": "2024-05-25T10:00:00Z",
+  "location": "Conference Room B"
+}
 ```
 
 Response:
 ```json
 {
-  "success": true
+  "message": "Event created",
+  "event": {
+    "id": 3,
+    "title": "Client Meeting",
+    "description": "Discuss project timeline",
+    "start_time": "2024-05-25T09:00:00Z",
+    "end_time": "2024-05-25T10:00:00Z",
+    "location": "Conference Room B",
+    "all_day": false,
+    "created_at": "2024-05-18T15:00:00Z",
+    "updated_at": "2024-05-18T15:00:00Z"
+  }
+}
+```
+
+#### Update an event
+
+```
+POST /events/1
+```
+
+Request body:
+```json
+{
+  "location": "Virtual Meeting",
+  "description": "Updated description with meeting link"
+}
+```
+
+Response:
+```json
+{
+  "message": "Event updated",
+  "event": {
+    "id": 1,
+    "title": "Team Meeting",
+    "description": "Updated description with meeting link",
+    "start_time": "2024-05-20T10:00:00Z",
+    "end_time": "2024-05-20T11:00:00Z",
+    "location": "Virtual Meeting",
+    "all_day": false,
+    "created_at": "2024-05-18T14:00:00Z",
+    "updated_at": "2024-05-18T15:15:00Z"
+  }
+}
+```
+
+#### Delete an event
+
+```
+POST /events/1/delete
+```
+
+Response:
+```json
+{
+  "message": "Event deleted successfully",
+  "event": {
+    "id": 1,
+    "title": "Team Meeting",
+    "description": "Updated description with meeting link",
+    "start_time": "2024-05-20T10:00:00Z",
+    "end_time": "2024-05-20T11:00:00Z",
+    "location": "Virtual Meeting",
+    "all_day": false,
+    "created_at": "2024-05-18T14:00:00Z",
+    "updated_at": "2024-05-18T15:15:00Z"
+  }
 }
 ```
 
@@ -161,9 +197,9 @@ Response:
 
 The application follows a structured architecture:
 
-1. **Models** (`models/todo.rb`): Define the data schema and validation rules
-2. **Controllers** (`routes/todos/controllers/`): Handle business logic and data operations
-3. **Handlers** (`routes/todos/handlers/`): Format responses and set HTTP status codes
+1. **Models** (`models/event.rb`): Define the data schema and validation rules
+2. **Controllers** (`routes/events/controllers/`): Handle business logic and data operations
+3. **Handlers** (`routes/events/handlers/`): Format responses and set HTTP status codes
 4. **Application** (`app.rb`): Configure the database and set up the application
 
 ## Testing

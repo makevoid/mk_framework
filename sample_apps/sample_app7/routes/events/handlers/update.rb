@@ -1,11 +1,12 @@
 # frozen_string_literal: true
 
-class TodosUpdateHandler < MK::Handler
+class EventsUpdateHandler < MK::Handler
   handler do |r|
     success do |r|
+      r.response.status = 200
       {
-        message: "Todo updated",
-        todo: model.to_hash,
+        message: "Event updated",
+        event: model.to_hash
       }
     end
 
