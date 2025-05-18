@@ -1,0 +1,9 @@
+task :run do
+  sh "bundle exec rackup -p 3000"
+end
+
+task :spec do
+  sh "bundle exec rspec"
+end
+
+task default: :run
