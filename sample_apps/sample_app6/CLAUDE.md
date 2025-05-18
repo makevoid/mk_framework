@@ -116,3 +116,85 @@ class TodosIndexHandler < MK::Handler
   end
 end
 ```
+
+
+## Gotchas when developing with the MK framework
+
+There are some gotchas when you have to to develop with the MK framework, they're noted here:
+
+## GOTCHA 1 - MK Framework Handler Error #
+
+When you see an error like this:
+
+```Run options: include {:locations=>{"./spec/request/weather_spec.rb"=>[17]}}
+ERROR: Roda::RodaError
+{
+  "request_info": {
+    "path": ...
+    "method": "GET",
+    "params": {
+      "id": ...
+    },
+    "message": "unsupported block result: #<WeatherShowHandler:0x0..., :fetched_at=>2025-05-18 06:37:14.068235 +0200}>>"
+  },
+  "trace": {
+    "relevant": [
+      "/Users/makevoid/apps/mk_framework/lib/mk_framework...:in `block (4 levels) in register_resource_routes'",
+      ...'",
+      "/Users/makevoid/apps/mk_framework/sample_apps/samp...ec.rb:18:in `block (4 levels) in <top (required)>'"
+    ]
+  }
+}
+F
+```
+
+this means that the handler is not returning the right result in the handler for weather / show - WeatherShowHandler - which you can find in `./routes/weather/handlers/show.rb`
+
+---
+
+## GOTCHA 2 - MK Framework Handler Error #2
+
+This is wrong and you will receive an Handler Error
+
+```
+class WeatherIndexHandler < MK::Handler
+  handler do |r|
+    success do |r|
+      ...
+    end
+
+    ...
+  end
+end
+```
+
+This is correct, the code will work like this and return the value defined in the handler
+
+```
+class WeatherIndexHandler < MK::Handler
+  handler do |r|
+    ...
+  end
+end
+```
+
+Remember that in Index and Show handlers there is no `model.save` or `model.destroy` - they are handled by the framework internally between controller and handlers.
+
+## GOTCHA 3 - MK Framework Controller and Handlers use blocks, you can't return
+
+MK Framework Controller and Handlers use blocks, you can't return values from them. Instead, you should use the `next` block to pass control to the next handler using ruby blocks syntax.
+
+
+```
+handler do
+errors.merge!(user.errors)
+next # Stops execution if save fails
+```
+
+```
+class TodosIndexHandler < MK::Handler
+  handler do |r|
+    next if model.inactive?
+  end
+end
+```
