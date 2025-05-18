@@ -6,7 +6,7 @@ require 'roda'
 require_relative '../../lib/mk_framework'
 
 # Set up database connection
-DB = Sequel.connect('sqlite://todos.db')
+DB = Sequel.connect('sqlite://calendar.db')
 
 # Create todos table if it doesn't exist
 DB.create_table? :todos do
@@ -18,10 +18,24 @@ DB.create_table? :todos do
   DateTime :updated_at, default: Sequel::CURRENT_TIMESTAMP
 end
 
+# Create events table if it doesn't exist
+DB.create_table? :events do
+  primary_key :id
+  String :title, null: false
+  String :description
+  DateTime :start_time, null: false
+  DateTime :end_time
+  String :location
+  TrueClass :all_day, default: false
+  DateTime :created_at, default: Sequel::CURRENT_TIMESTAMP
+  DateTime :updated_at, default: Sequel::CURRENT_TIMESTAMP
+end
+
 # Require models
 require_relative 'models/todo'
+require_relative 'models/event'
 
 # Create application instance
-class TodoApp < MK::Application
+class CalendarApp < MK::Application
   # No need to override initialize - the parent class handles everything
 end
