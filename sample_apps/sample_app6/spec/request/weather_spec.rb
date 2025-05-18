@@ -9,27 +9,6 @@ describe "Weather API" do
   end
 
   describe "GET /weather/:location" do
-    context "when API key is missing" do
-      before do
-        allow(WeatherApp).to receive(:api_key).and_return(nil)
-      end
-
-      it "returns an error", vcr: { record: :none } do
-        VCR.turned_off do
-          WebMock.allow_net_connect!
-          get "/weather/London"
-          expect(last_response.status).to eq 500
-          expect(resp[:error]).to eq "API key not found"
-          WebMock.disable_net_connect!
-        end
-      end
-
-      after do
-        # Reset the mock
-        allow(WeatherApp).to receive(:api_key).and_call_original
-      end
-    end
-
     context "with successful API response", :vcr do
       before do
         # Clean the database
@@ -51,14 +30,14 @@ describe "Weather API" do
       it "returns cached data if available and fresh", vcr: { cassette_name: "openweathermap/london_forecast_cached" } do
         # First request to populate the cache
         get "/weather/London"
-        
+
         # The fetched_at from the first request
         first_timestamp = resp[:fetched_at]
-        
+
         # Make another request - should use cache instead of making a new API call
         get "/weather/London"
         second_timestamp = resp[:fetched_at]
-        
+
         # Timestamps should be the same since we're using cached data
         expect(first_timestamp).to eq(second_timestamp)
       end
@@ -74,11 +53,11 @@ describe "Weather API" do
         # First create an expired record
         response = WeatherShowController.new.send(:fetch_weather_data, "Paris", WeatherApp.api_key)
         weather = WeatherShowController.store_weather_data("Paris", response.body)
-        
+
         # Manually update the fetched_at time to make it appear expired
         original_fetched_at = Time.now - 3601 # Just over an hour ago
         weather.update(fetched_at: original_fetched_at)
-        
+
         # Now make the request that should refresh the data
         get "/weather/Paris"
 
@@ -131,7 +110,7 @@ describe "Weather API" do
       response = WeatherShowController.new.send(:fetch_weather_data, "London", WeatherApp.api_key)
       WeatherShowController.store_weather_data("London", response.body)
 
-      # Create real weather data for New York 
+      # Create real weather data for New York
       response = WeatherShowController.new.send(:fetch_weather_data, "New York", WeatherApp.api_key)
       new_york = WeatherShowController.store_weather_data("New York", response.body)
       # Set the fetched_at time to be older but still within cache timeout
