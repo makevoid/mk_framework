@@ -9,6 +9,8 @@ GEM
       bigdecimal
       rexml
     diff-lcs (1.6.2)
+    excon (1.2.5)
+      logger
     hashdiff (1.1.2)
     json (2.12.0)
     logger (1.7.0)
@@ -54,6 +56,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  excon
   json
   logger
   puma

@@ -1,4 +1,4 @@
-DIRS = %w(sample_app2 sample_app3 sample_app4 sample_app5)
+DIRS = %w(sample_app2 sample_app3 sample_app4 sample_app5 sample_app6)
 
 def run_tests
   DIRS.each do |dir|
