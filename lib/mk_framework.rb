@@ -13,7 +13,52 @@ def singularize(str)
   str
 end
 
+# TODO
+module TruncationHelpers
+  def truncate_error_message(message, max_length=100)
+    return message if message.nil? || message.length <= max_length
+
+    half_length = max_length / 2
+    "#{message[0...half_length]}...#{message[-half_length..-1]}"
+  end
+
+  # def truncate_backtrace(backtrace, lines_before=20, lines_after=5)
+  #   return backtrace if backtrace.nil? || backtrace.empty?
+  #   return backtrace.map { |line| truncate_error_message(line) } if backtrace.length <= lines_before + lines_after
+
+  #   truncated = backtrace.first(lines_before).map { |line| truncate_error_message(line) }
+  #   truncated << "... #{backtrace.length - (lines_before + lines_after)} more lines ..."
+  #   truncated.concat(backtrace.last(lines_after).map { |line| truncate_error_message(line) })
+  # end
+end
+
 module MK
+
+  class ErrorDetails
+    def self.details(err:, request:)
+      error_message = err.message
+      error_backtrace = err.backtrace.reject do |line|
+        line.include?("ruby_executable_hooks") || line.include?('forwardable') || line.include?('roda') || line.include?('rack-test') || line.include?('rspec')
+      end
+
+      extend TruncationHelpers
+      error_message   = truncate_error_message error_message
+
+
+      {
+        request_info: {
+          path: request.path,
+          method: request.request_method,
+          params: request.params.reject { |key, _| key.to_s.include?('password') }, # TODO: add feature to include sensitive parameters at global appp level
+          message: error_message,
+        },
+        trace: {
+          relevant: error_backtrace
+        }
+      }
+    end
+  end
+
   # Base MK application
   class Application < Roda
     plugin :all_verbs
@@ -21,30 +66,17 @@ module MK
     plugin :json_parser
     plugin :halt
     plugin :not_found
-    plugin :error_handler do |e|
+    plugin :error_handler do |err|
       # Create a detailed error object
-      error_details = {
-        request_info: {
-          path: request.path,
-          method: request.request_method,
-          params: request.params.reject { |k, _| k.to_s.include?('password') }, # Sanitize sensitive data
-          message: e.message,
-        },
-        trace: {
-          relevant: e.backtrace.reject { |line| line.include?("ruby_executable_hooks") || line.include?('forwardable') || line.include?('roda') || line.include?('rack-test') || line.include?('rspec')  }
-        }
-      }
+      error_details = ErrorDetails.details err: err, request: request
 
       # Log the detailed error
+
       if defined?(logger) && logger.respond_to?(:error)
-        logger.error "ERROR: #{e.class.name}"
-        logger.error e.message
-        logger.error "Stacktrace and Info:"
+        logger.error "ERROR: #{err.class.name}"
         logger.error JSON.pretty_generate error_details
       else
-        puts "ERROR: #{e.class.name}"
-        puts e.message
-        puts "Stacktrace and Info:"
+        puts "ERROR: #{err.class.name}"
         puts JSON.pretty_generate error_details
       end
 
@@ -427,7 +459,7 @@ module MK
           model_class: model ? model.class.name : nil,
           model_state: model.is_a?(Sequel::Model) ? model.values : nil
           }.to_yaml
-        puts "ERROR:"
+        puts "ERROR (Handler - execute):"
         puts error_info
         raise e  # Re-raise to be caught by the application error handler
       end
