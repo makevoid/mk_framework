@@ -23,5 +23,5 @@ require_relative 'models/todo'
 
 # Create application instance
 class TodoApp < MK::Application
-  # No need to override initialize - the parent class handles everything
+  register_cors_domain 'http://localhost:3001'
 end

@@ -1,4 +1,6 @@
-# MK Framework Guidelines
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Commands
 - Run server: `bundle exec rackup`
@@ -6,6 +8,14 @@
 - Run tests: `bundle exec rspec`
 - Run single test: `bundle exec rspec spec/path/to/file_spec.rb:LINE_NUMBER`
 - Linting: `bundle exec rubocop`
+
+## Application Architecture
+This is a RESTful Todo API built with the MK Framework, a lightweight Ruby web framework based on Roda. The application follows a clean separation of concerns:
+
+- **Models**: Define data schema and validation rules using Sequel::Model (`models/todo.rb`)
+- **Controllers**: Handle business logic and data operations (`routes/todos/controllers/`)
+- **Handlers**: Format responses and set HTTP status codes (`routes/todos/handlers/`)
+- **Application**: Main entry point that configures database and routes (`app.rb`)
 
 ## Code Style
 - Include `# frozen_string_literal: true` at the top of each Ruby file
@@ -28,9 +38,15 @@
 - Do not standardize HTTP methods across tests as this dual approach validates both patterns
 
 ## Route Structure
-- Framework uses a consistent RESTful routing pattern similar to Ruby on Rails and Sinatra:
+- Framework uses a consistent RESTful routing pattern:
   - GET /todos - index (list all)
   - GET /todos/:id - show (get one)
   - POST /todos - create
   - POST /todos/:id - update
   - POST /todos/:id/delete - delete
+
+## Testing
+- Tests use RSpec with Rack::Test for HTTP request simulation
+- Test helpers are available in the MK::Framework::Spec module
+- Tests should clean up database state between examples (using `before` blocks)
+- Response data can be accessed through the `resp` helper method which parses JSON

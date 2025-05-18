@@ -49,13 +49,13 @@ gem install mk_framework-0.1.0.gem
 1. Create your application structure:
 
 ```
-my_app/
+todo_app/
 ├── app.rb
 ├── config.ru
 ├── models/
-│   └── user.rb
+│   └── todo.rb
 └── routes/
-    └── users/
+    └── todos/
         ├── controllers/
         │   ├── create.rb
         │   ├── delete.rb
@@ -75,30 +75,29 @@ my_app/
 ```ruby
 # app.rb
 require 'sequel'
-require 'mk_framework'
+require 'json'
+require 'roda'
+require_relative '../lib/mk_framework'
 
 # Set up database connection
-DB = Sequel.connect('sqlite://my_database.db')
+DB = Sequel.connect('sqlite://todos.db')
 
-# Create your tables
-DB.create_table? :users do
+# Create todos table if it doesn't exist
+DB.create_table? :todos do
   primary_key :id
-  String :name, null: false
-  String :email, null: false, unique: true
+  String :title, null: false
+  String :description
+  TrueClass :completed, default: false
   DateTime :created_at, default: Sequel::CURRENT_TIMESTAMP
   DateTime :updated_at, default: Sequel::CURRENT_TIMESTAMP
 end
 
 # Require models
-require_relative 'models/user'
+require_relative 'models/todo'
 
 # Create application instance
-class MyApp < MK::Application
-  # Setup CORS if needed
-  register_cors_domain 'http://localhost:3000'
-  
-  # Set up logging
-  setup_logger('log/application.log')
+class TodoApp < MK::Application
+  # No need to override initialize - the parent class handles everything
 end
 ```
 
@@ -108,20 +107,21 @@ end
 # config.ru
 require_relative 'app'
 
-run MyApp
+# Run the TodoApp class directly as a Rack app
+run TodoApp
 ```
 
 ### Define Your Models
 
 ```ruby
-# models/user.rb
-class User < Sequel::Model
+# models/todo.rb
+class Todo < Sequel::Model
   plugin :validation_helpers
 
   def validate
     super
-    validates_presence [:name, :email]
-    validates_unique :email
+    validates_presence [:title]
+    validates_max_length 100, :title
   end
 end
 ```
@@ -131,17 +131,17 @@ end
 #### Index (List all resources)
 
 ```ruby
-# routes/users/controllers/index.rb
-class UsersIndexController < MK::Controller
+# routes/todos/controllers/index.rb
+class TodosIndexController < MK::Controller
   route do |r|
-    User.all
+    Todo.all
   end
 end
 ```
 
 ```ruby
-# routes/users/handlers/index.rb
-class UsersIndexHandler < MK::Handler
+# routes/todos/handlers/index.rb
+class TodosIndexHandler < MK::Handler
   handler do |r|
     model.map(&:to_hash)
   end
@@ -151,17 +151,17 @@ end
 #### Show (Get a single resource)
 
 ```ruby
-# routes/users/controllers/show.rb
-class UsersShowController < MK::Controller
+# routes/todos/controllers/show.rb
+class TodosShowController < MK::Controller
   route do |r|
-    User[r.params.fetch('id')]
+    Todo[r.params.fetch('id')]
   end
 end
 ```
 
 ```ruby
-# routes/users/handlers/show.rb
-class UsersShowHandler < MK::Handler
+# routes/todos/handlers/show.rb
+class TodosShowHandler < MK::Handler
   handler do |r|
     model.to_hash
   end
@@ -171,26 +171,27 @@ end
 #### Create
 
 ```ruby
-# routes/users/controllers/create.rb
-class UsersCreateController < MK::Controller
+# routes/todos/controllers/create.rb
+class TodosCreateController < MK::Controller
   route do |r|
-    User.new(
-      name: r.params['name'],
-      email: r.params['email']
+    Todo.new(
+      title: r.params['title'],
+      description: r.params['description'],
+      completed: r.params['completed'] || false
     )
   end
 end
 ```
 
 ```ruby
-# routes/users/handlers/create.rb
-class UsersCreateHandler < MK::Handler
+# routes/todos/handlers/create.rb
+class TodosCreateHandler < MK::Handler
   handler do |r|
     success do |r|
       r.response.status = 201
       {
-        message: "User created",
-        user: model.to_hash
+        message: "Todo created",
+        todo: model.to_hash
       }
     end
 
@@ -208,36 +209,37 @@ end
 #### Update
 
 ```ruby
-# routes/users/controllers/update.rb
-class UsersUpdateController < MK::Controller
+# routes/todos/controllers/update.rb
+class TodosUpdateController < MK::Controller
   route do |r|
-    user = User[r.params.fetch('id')]
+    todo = Todo[r.params.fetch('id')]
     
-    r.halt(404, { message: "User not found" }) if user.nil?
+    r.halt(404, { message: "todo not found" }) if todo.nil?
 
-    user.name = r.params['name'] if r.params.key?('name')
-    user.email = r.params['email'] if r.params.key?('email')
+    todo.title = r.params['title'] if r.params.key?('title')
+    todo.description = r.params['description'] if r.params.key?('description')
+    todo.completed = r.params['completed'] if r.params.key?('completed')
     
-    user
+    todo
   end
 end
 ```
 
 ```ruby
-# routes/users/handlers/update.rb
-class UsersUpdateHandler < MK::Handler
+# routes/todos/handlers/update.rb
+class TodosUpdateHandler < MK::Handler
   handler do |r|
     success do |r|
       {
-        message: "User updated",
-        user: model.to_hash
+        message: "Todo updated",
+        todo: model.to_hash
       }
     end
 
     error do |r|
       r.response.status = 400
       {
-        error: "Validation failed",
+        error: "Validation failed!",
         details: model.errors
       }
     end
@@ -248,33 +250,33 @@ end
 #### Delete
 
 ```ruby
-# routes/users/controllers/delete.rb
-class UsersDeleteController < MK::Controller
+# routes/todos/controllers/delete.rb
+class TodosDeleteController < MK::Controller
   route do |r|
-    user = User[r.params.fetch('id')]
+    todo = Todo[r.params.fetch('id')]
     
-    r.halt(404, { message: "User not found" }) if user.nil?
+    r.halt(404, { message: "todo not found" }) if todo.nil?
     
-    user
+    todo
   end
 end
 ```
 
 ```ruby
-# routes/users/handlers/delete.rb
-class UsersDeleteHandler < MK::Handler
+# routes/todos/handlers/delete.rb
+class TodosDeleteHandler < MK::Handler
   handler do |r|
     success do |r|
       {
-        message: "User deleted successfully",
-        user: model.to_hash
+        message: "Todo deleted successfully",
+        todo: model.to_hash
       }
     end
 
     error do |r|
       r.response.status = 500
       {
-        error: "Failed to delete user"
+        error: "Failed to delete todo"
       }
     end
   end
@@ -293,11 +295,11 @@ MK Framework automatically generates RESTful routes based on your controller/han
 
 | HTTP Method | Path               | Action  | Description            |
 |-------------|-------------------|---------|------------------------|
-| GET         | /users            | index   | List all users         |
-| GET         | /users/:id        | show    | Get a single user      |
-| POST        | /users            | create  | Create a new user      |
-| POST        | /users/:id        | update  | Update an existing user |
-| POST        | /users/:id/delete | delete  | Delete a user          |
+| GET         | /todos            | index   | List all todos         |
+| GET         | /todos/:id        | show    | Get a single todo      |
+| POST        | /todos            | create  | Create a new todo      |
+| POST        | /todos/:id        | update  | Update an existing todo |
+| POST        | /todos/:id/delete | delete  | Delete a todo          |
 
 > **Note**: MK Framework uses POST for update and delete operations rather than PUT/PATCH and DELETE HTTP methods.
 
@@ -307,19 +309,19 @@ You can create nested resources to represent relationships:
 
 ```ruby
 # In your app.rb or a configuration file
-MyApp.register_nested_resource('users', 'posts')
+TodoApp.register_nested_resource('projects', 'todos')
 ```
 
 This creates nested routes:
 
-| HTTP Method | Path                      | Action  | Description                  |
-|-------------|--------------------------|---------|------------------------------|
-| GET         | /users/:user_id/posts    | index   | List posts for a specific user |
-| POST        | /users/:user_id/posts    | create  | Create a post for a specific user |
+| HTTP Method | Path                          | Action  | Description                       |
+|-------------|------------------------------|---------|-----------------------------------|
+| GET         | /projects/:project_id/todos  | index   | List todos for a specific project |
+| POST        | /projects/:project_id/todos  | create  | Create a todo for a specific project |
 
 ## Testing
 
-MK Framework includes test helpers for RSpec and Rack::Test:
+MK Framework includes test helpers for RSpec and Rack::Test. Here's how to set up and write tests for your Todo app:
 
 ```ruby
 # spec/spec_helper.rb
@@ -327,36 +329,169 @@ require 'rspec'
 require 'rack/test'
 require 'json'
 require_relative '../app'
-require_relative '/path/to/mk_framework/lib_spec/mk_framework_spec_helpers'
+require_relative '../../lib_spec/mk_framework_spec_helpers'
 
 RSpec.configure do |config|
   config.include Rack::Test::Methods
   
   def app
-    MyApp.app
+    TodoApp.app
   end
   
   config.include MK::Framework::Spec
 end
 ```
 
-In your tests:
+### Example Test Cases
+
+#### 1. Show Todo Test
 
 ```ruby
-# spec/request/users_spec.rb
-require 'spec_helper'
+describe "GET /todos/:id" do
+  before do
+    Todo.dataset.delete
 
-describe "Users" do
-  describe "GET /users" do
-    it "returns all users" do
-      get '/users'
-      
+    @todo = Todo.create(
+      title: "Test Todo",
+      description: "This is a test todo",
+      completed: false
+    )
+  end
+
+  context "when todo exists" do
+    it "returns the todo" do
+      get "/todos/#{@todo.id}"
+
       expect(last_response.status).to eq 200
-      expect(resp.length).to eq User.count
+
+      expect(resp[:id]).to eq @todo.id
+      expect(resp[:title]).to eq "Test Todo"
+      expect(resp[:description]).to eq "This is a test todo"
+      expect(resp[:completed]).to eq false
     end
   end
-  
-  # More tests...
+
+  context "when todo does not exist" do
+    it "returns a 404 error" do
+      get "/todos/999999"
+
+      expect(last_response.status).to eq 404
+      expect(resp[:error]).to eq "Todo not found"
+    end
+  end
+end
+```
+
+#### 2. Create Todo Test
+
+```ruby
+describe "POST /todos" do
+  context "with valid parameters" do
+    it "creates a new todo" do
+      post '/todos', {
+        title: "Test Todo",
+        description: "This is a test todo"
+      }
+
+      expect(last_response.status).to eq 201
+
+      expect(resp[:message]).to eq "Todo created"
+      expect(resp[:todo][:title]).to eq "Test Todo"
+      expect(resp[:todo][:description]).to eq "This is a test todo"
+      expect(resp[:todo][:completed]).to eq false
+    end
+  end
+
+  context "with invalid parameters" do
+    it "returns validation errors when title is missing" do
+      post '/todos', {
+        description: "This todo has no title"
+      }
+
+      expect(last_response.status).to eq 422
+
+      expect(resp[:error]).to eq "Validation failed"
+      expect(resp[:details]).to have_key :title
+    end
+
+    it "returns validation errors when title is too long" do
+      post '/todos', {
+        title: "X" * 101,
+        description: "This todo has a title that is too long"
+      }
+
+      expect(last_response.status).to eq 422
+
+      expect(resp[:error]).to eq "Validation failed"
+      expect(resp[:details]).to have_key :title
+    end
+  end
+end
+```
+
+#### 3. Update Todo Test
+
+```ruby
+describe "POST /todos/:id" do
+  before do
+    Todo.dataset.delete
+
+    @todo = Todo.create(
+      title: "Original Title",
+      description: "Original Description",
+      completed: false
+    )
+  end
+
+  context "when todo exists" do
+    it "updates the todo title" do
+      post "/todos/#{@todo.id}", {
+        title: "Updated Title"
+      }
+
+      expect(last_response.status).to eq 200
+
+      expect(resp[:message]).to eq "Todo updated"
+      expect(resp[:todo][:id]).to eq @todo.id
+      expect(resp[:todo][:title]).to eq "Updated Title"
+      expect(resp[:todo][:description]).to eq "Original Description"
+      expect(resp[:todo][:completed]).to eq false
+    end
+
+    it "updates the todo completed status" do
+      post "/todos/#{@todo.id}", {
+        completed: true
+      }
+
+      expect(last_response.status).to eq 200
+
+      expect(resp[:message]).to eq "Todo updated"
+      expect(resp[:todo][:id]).to eq @todo.id
+      expect(resp[:todo][:completed]).to eq true
+    end
+
+    it "returns validation errors when title is too long" do
+      post "/todos/#{@todo.id}", {
+        title: "X" * 101
+      }
+
+      expect(last_response.status).to eq 400
+
+      expect(resp[:error]).to eq "Validation failed!"
+      expect(resp[:details]).to have_key :title
+    end
+  end
+
+  context "when todo does not exist" do
+    it "returns a 404 error" do
+      post "/todos/999999", {
+        title: "Updated Title"
+      }
+
+      expect(last_response.status).to eq 404
+      expect(resp[:message]).to eq "todo not found"
+    end
+  end
 end
 ```
 
