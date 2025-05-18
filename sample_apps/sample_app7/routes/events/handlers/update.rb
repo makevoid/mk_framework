@@ -3,7 +3,6 @@
 class EventsUpdateHandler < MK::Handler
   handler do |r|
     success do |r|
-      r.response.status = 200
       {
         message: "Event updated",
         event: model.to_hash

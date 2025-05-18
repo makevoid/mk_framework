@@ -2,9 +2,6 @@
 
 class EventsShowHandler < MK::Handler
   handler do |r|
-    success do |r|
-      r.response.status = 200
-      model.to_hash
-    end
+    model.to_hash
   end
 end
