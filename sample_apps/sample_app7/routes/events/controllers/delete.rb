@@ -5,8 +5,10 @@ class EventsDeleteController < MK::Controller
     event = Event[r.params['id']]
     r.halt(404, { error: "Event not found" }) unless event
     
-    deleted_event = event.values.dup
-    event.delete
-    { event: deleted_event }
+    # Store the values before deletion for use in the handler
+    event.instance_variable_set(:@deleted_values, event.values.dup)
+    
+    # Return the event model for the framework to handle
+    event
   end
 end

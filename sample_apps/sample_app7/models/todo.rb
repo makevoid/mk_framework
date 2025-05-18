@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Todo < Sequel::Model
   plugin :validation_helpers
 
