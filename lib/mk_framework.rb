@@ -239,6 +239,17 @@ module MK
 
       # Create a new route block that includes our resource routes
       route do |r|
+        response['Access-Control-Allow-Origin'] = 'https://v0-create-calendar-with-api.vercel.app'
+        response['Vary'] = 'Origin' # Important for caching
+        response['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+        response['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH'
+        response['Access-Control-Max-Age'] = '86400' # 24 hours
+        response['Access-Control-Allow-Credentials'] = 'true'
+
+        r.options do
+          r.halt 204
+        end
+
         # First evaluate the existing routes
         instance_exec(r, &current_route_block)
 
