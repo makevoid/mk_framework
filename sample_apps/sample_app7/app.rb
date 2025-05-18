@@ -37,5 +37,6 @@ require_relative 'models/event'
 
 # Create application instance
 class CalendarApp < MK::Application
-  # No need to override initialize - the parent class handles everything
+  # register_cors_domain 'http://localhost:3000'
+  register_cors_domain 'https://v0-create-calendar-with-api.vercel.app'
 end

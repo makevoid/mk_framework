@@ -13,7 +13,7 @@ def singularize(str)
   str
 end
 
-# TODO
+# TODO - refactor
 module TruncationHelpers
   def truncate_error_message(message, max_length=100)
     return message if message.nil? || message.length <= max_length
@@ -21,15 +21,6 @@ module TruncationHelpers
     half_length = max_length / 2
     "#{message[0...half_length]}...#{message[-half_length..-1]}"
   end
-
-  # def truncate_backtrace(backtrace, lines_before=20, lines_after=5)
-  #   return backtrace if backtrace.nil? || backtrace.empty?
-  #   return backtrace.map { |line| truncate_error_message(line) } if backtrace.length <= lines_before + lines_after
-
-  #   truncated = backtrace.first(lines_before).map { |line| truncate_error_message(line) }
-  #   truncated << "... #{backtrace.length - (lines_before + lines_after)} more lines ..."
-  #   truncated.concat(backtrace.last(lines_after).map { |line| truncate_error_message(line) })
-  # end
 end
 
 module MK
@@ -43,7 +34,6 @@ module MK
 
       extend TruncationHelpers
       error_message   = truncate_error_message error_message
-
 
       {
         request_info: {
@@ -61,6 +51,9 @@ module MK
 
   # Base MK application
   class Application < Roda
+
+    @@cors_domain = nil
+
     plugin :all_verbs
     plugin :json
     plugin :json_parser
@@ -124,6 +117,19 @@ module MK
 
       # Set up the default route block for the application
       subclass.route do |r|
+        if @@cors_domain
+          response['Access-Control-Allow-Origin'] = @@cors_domain
+          response['Vary'] = 'Origin' # Important for caching
+          response['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+          response['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH'
+          response['Access-Control-Max-Age'] = '86400' # 24 hours
+          response['Access-Control-Allow-Credentials'] = 'true'
+        end
+
+        r.options do
+          r.halt 204
+        end
+
         # Default root route
         r.root do
           { message: "Welcome to MK Framework" }
@@ -219,6 +225,10 @@ module MK
       end
     }
 
+    def self.register_cors_domain(domain)
+      @@cors_domain = domain
+    end
+
     # Register routes for a specific resource
     def self.register_resource_routes(resource_name)
       controllers_dir = File.join(routes_path, resource_name, 'controllers')
@@ -239,17 +249,6 @@ module MK
 
       # Create a new route block that includes our resource routes
       route do |r|
-        response['Access-Control-Allow-Origin'] = 'https://v0-create-calendar-with-api.vercel.app'
-        response['Vary'] = 'Origin' # Important for caching
-        response['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
-        response['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH'
-        response['Access-Control-Max-Age'] = '86400' # 24 hours
-        response['Access-Control-Allow-Credentials'] = 'true'
-
-        r.options do
-          r.halt 204
-        end
-
         # First evaluate the existing routes
         instance_exec(r, &current_route_block)
 
@@ -337,8 +336,6 @@ module MK
 
   # Base handler class for MK framework
   class Handler
-    # attr_reader :model
-
     class << self
       def route(&block)
         define_method(:route_block) do
@@ -356,13 +353,8 @@ module MK
 
     def initialize(controller_return_value)
       @controller_return_value = controller_return_value
-      # @model = model
-      # @model_name = model.class.name.downcase if model.is_a?(Sequel::Model)
       @success_block = nil
       @fail_block = nil
-
-      # Dynamically define accessors for the model
-      # define_model_accessors if model
     end
 
     def success(&block)
@@ -494,24 +486,6 @@ module MK
       else
         obj
       end
-    end
-
-    # Define accessors for model object dynamically using define_method
-    def define_model_accessors
-      # First define a method to access the model directly
-      # self.class.class_eval do
-      #   define_method(@model_name.to_sym) { @model } if @model.is_a?(Sequel::Model)
-      # end
-
-      # Then define methods for all model attributes
-      # if @model.is_a?(Sequel::Model)
-      #   @model.columns.each do |column|
-      #     self.class.class_eval do
-      #       define_method(column) { @model[column] }
-      #       define_method("#{column}=") { |value| @model[column] = value }
-      #     end
-      #   end
-      # end
     end
   end
 end

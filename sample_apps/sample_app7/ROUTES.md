@@ -6,7 +6,7 @@ This document provides detailed information about the Calendar Events API routes
 
 When running locally, the API is accessible at:
 ```
-http://localhost:9292
+http://localhost:3000
 ```
 
 ## Available Routes
@@ -283,7 +283,7 @@ export default function CalendarView() {
     try {
       setLoading(true);
       const data = await eventService.getEvents();
-      
+
       // Transform API data to calendar events format
       const formattedEvents = data.map(event => ({
         id: event.id,
@@ -293,7 +293,7 @@ export default function CalendarView() {
         allDay: event.all_day,
         resource: event, // Store the complete event object
       }));
-      
+
       setEvents(formattedEvents);
     } catch (error) {
       console.error('Error fetching events:', error);
@@ -628,32 +628,32 @@ export default function EventDetails() {
   return (
     <div>
       <h1>{event.title}</h1>
-      
+
       <div>
-        <strong>When:</strong> 
+        <strong>When:</strong>
         {event.all_day ? (
           <span>All day on {new Date(event.start_time).toLocaleDateString()}</span>
         ) : (
           <span>
-            {new Date(event.start_time).toLocaleString()} - 
+            {new Date(event.start_time).toLocaleString()} -
             {event.end_time ? new Date(event.end_time).toLocaleString() : 'N/A'}
           </span>
         )}
       </div>
-      
+
       {event.location && (
         <div>
           <strong>Where:</strong> {event.location}
         </div>
       )}
-      
+
       {event.description && (
         <div>
           <strong>Description:</strong>
           <p>{event.description}</p>
         </div>
       )}
-      
+
       <div>
         <Link href={`/events/${id}/edit`}>
           <a>Edit Event</a>
