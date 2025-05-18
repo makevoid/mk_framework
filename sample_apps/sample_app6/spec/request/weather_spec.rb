@@ -67,7 +67,7 @@ describe "Weather API" do
       end
     end
 
-    context "with cache expired" do
+    context "with cache expired", :vcr do
       before do
         # Clean the database 
         DB[:weathers].delete
@@ -78,16 +78,9 @@ describe "Weather API" do
           data: mock_weather_data,
           fetched_at: Time.now - 3601 # Just over an hour ago
         )
-        
-        # Mock the API request to avoid actual API calls during tests
-        http_response = double(Net::HTTPSuccess)
-        allow(http_response).to receive(:is_a?).with(Net::HTTPSuccess).and_return(true)
-        allow(http_response).to receive(:body).and_return(mock_weather_data)
-        
-        allow(Net::HTTP).to receive(:get_response).and_return(http_response)
       end
 
-      it "fetches new data when cache is expired" do
+      it "fetches new data when cache is expired", vcr: { cassette_name: "openweathermap/paris_forecast" } do
         original_fetched_at = @weather.fetched_at
         
         get "/weather/Paris"
@@ -99,6 +92,37 @@ describe "Weather API" do
         
         # The new timestamp should be more recent
         expect(fetched_time).to be > original_time
+      end
+    end
+    
+    context "with a new location", :vcr do
+      before do
+        # Clean the database to ensure the location doesn't exist
+        DB[:weathers].delete
+      end
+      
+      it "fetches data for a new location", vcr: { cassette_name: "openweathermap/tokyo_forecast" } do
+        get "/weather/Tokyo"
+        
+        # Debug output to see what's happening
+        puts "Response status: #{last_response.status}"
+        puts "Response body: #{last_response.body}"
+        
+        expect(last_response.status).to eq 200
+        expect(resp[:location]).to eq "Tokyo"
+        expect(resp[:hourly_forecast]).to be_an(Array)
+        expect(resp[:hourly_forecast].length).to be <= 24
+        expect(resp[:hourly_forecast][0]).to have_key(:temperature)
+        expect(resp[:hourly_forecast][0]).to have_key(:weather)
+      end
+    end
+    
+    context "with invalid location", :vcr do
+      it "returns an error when location doesn't exist", vcr: { cassette_name: "openweathermap/invalid_location" } do
+        get "/weather/NonExistentCity123456"
+        
+        expect(last_response.status).not_to eq 200
+        expect(resp).to have_key(:error)
       end
     end
   end
