@@ -467,25 +467,6 @@ module MK
         raise e  # Re-raise to be caught by the application error handler
       end
     end
-
-    private
-
-    # Recursively serialize objects to JSON-compatible hashes
-    def serialize(obj)
-      case obj
-      when Sequel::Model
-        obj.to_hash
-      when Hash
-        result = {}
-        obj.each do |key, value|
-          result[key] = serialize(value)
-        end
-        result
-      when Array
-        obj.map { |item| serialize(item) }
-      else
-        obj
-      end
-    end
+    
   end
 end
