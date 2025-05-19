@@ -28,7 +28,7 @@ class WeatherApp < MK::Application
   # Helper method to read API key from file
   def self.api_key
     @api_key ||= begin
-      path = File.expand_path('~/.openweathermaps_api_key')
+      path = File.expand_path('~/.openweathermap_api_key')
       File.read(path).strip
     rescue Errno::ENOENT
       puts "ERROR: OpenWeatherMap API key file not found at #{path}"

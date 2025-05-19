@@ -21,7 +21,7 @@ This application demonstrates a clean separation of concerns with a RESTful arch
 
 ## Prerequisites
 
-You need an OpenWeatherMap API key stored in a file at `~/.openweathermaps_api_key`.
+You need an OpenWeatherMap API key stored in a file at `~/.openweathermap_api_key`.
 
 ## Installation
 
