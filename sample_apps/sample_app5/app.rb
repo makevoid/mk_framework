@@ -35,8 +35,7 @@ require_relative 'models/comment'
 # Create application instance
 class KanbanApp < MK::Application
   # register_cors_domain 'http://localhost:3001'
-  register_cors_domain 'https://kzmh3yd33gb0785kschz.lite.vusercontent.net'
-
+  register_cors_domain 'https://kzmjffha2hqbbgzqs032.lite.vusercontent.net'
 
   # Register comments as a nested resource of cards
   register_nested_resource 'cards', 'comments'

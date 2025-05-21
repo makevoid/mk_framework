@@ -25,7 +25,8 @@ require_relative 'models/weather'
 
 # Create application instance
 class WeatherApp < MK::Application
-  # Helper method to read API key from file
+  register_cors_domain 'https://kzmq95efeylx3d3m1i5y.lite.vusercontent.net'
+
   def self.api_key
     @api_key ||= begin
       path = File.expand_path('~/.openweathermap_api_key')
