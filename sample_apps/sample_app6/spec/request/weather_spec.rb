@@ -11,7 +11,6 @@ describe "Weather API" do
   describe "GET /weather/:location" do
     context "with successful API response", :vcr do
       before do
-        # Clean the database
         DB[:weathers].delete
       end
 
@@ -28,17 +27,13 @@ describe "Weather API" do
       end
 
       it "returns cached data if available and fresh", vcr: { cassette_name: "openweathermap/london_forecast_cached" } do
-        # First request to populate the cache
         get "/weather/London"
 
-        # The fetched_at from the first request
         first_timestamp = resp[:fetched_at]
 
-        # Make another request - should use cache instead of making a new API call
         get "/weather/London"
         second_timestamp = resp[:fetched_at]
 
-        # Timestamps should be the same since we're using cached data
         expect(first_timestamp).to eq(second_timestamp)
       end
     end
@@ -50,30 +45,24 @@ describe "Weather API" do
       end
 
       it "fetches new data when cache is expired", vcr: { cassette_name: "openweathermap/paris_forecast_expired" } do
-        # First create an expired record
         response = WeatherShowController.new.send(:fetch_weather_data, "Paris", WeatherApp.api_key)
         weather = WeatherShowController.store_weather_data("Paris", response.body)
 
-        # Manually update the fetched_at time to make it appear expired
         original_fetched_at = Time.now - 3601 # Just over an hour ago
         weather.update(fetched_at: original_fetched_at)
 
-        # Now make the request that should refresh the data
         get "/weather/Paris"
 
-        # Should have updated the timestamp
         expect(last_response.status).to eq 200
         fetched_time = DateTime.parse(resp[:fetched_at])
         original_time = original_fetched_at.to_datetime
 
-        # The new timestamp should be more recent
         expect(fetched_time).to be > original_time
       end
     end
 
     context "with a new location", :vcr do
       before do
-        # Clean the database to ensure the location doesn't exist
         DB[:weathers].delete
       end
 
@@ -101,20 +90,16 @@ describe "Weather API" do
 
   describe "GET /weather", :vcr do
     before do
-      # Clean the database
       DB[:weathers].delete
     end
 
     it "returns all known locations", vcr: { cassette_name: "openweathermap/multiple_locations" } do
-      # Create real weather data for London
       response = WeatherShowController.new.send(:fetch_weather_data, "London", WeatherApp.api_key)
       WeatherShowController.store_weather_data("London", response.body)
 
-      # Create real weather data for New York
       response = WeatherShowController.new.send(:fetch_weather_data, "New York", WeatherApp.api_key)
       new_york = WeatherShowController.store_weather_data("New York", response.body)
-      # Set the fetched_at time to be older but still within cache timeout
-      new_york.update(fetched_at: Time.now - 2000) # Still within the hour
+      new_york.update(fetched_at: Time.now - 2000)
 
       get "/weather"
 
@@ -125,7 +110,6 @@ describe "Weather API" do
       expect(locations).to include("London")
       expect(locations).to include("New York")
 
-      # All should indicate they're still cached
       cache_status = resp.map { |w| w[:is_cached] }
       expect(cache_status).to all(be true)
     end

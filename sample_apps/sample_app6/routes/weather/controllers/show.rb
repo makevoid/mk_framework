@@ -15,11 +15,9 @@ class WeatherShowController < MK::Controller
     location = r.params.fetch('id')
     weather = Weather.where(location: location).first
 
-    # Check if we have cached data that's still fresh (less than 1 hour old)
     if weather && weather.fetched_at > Time.now - 3600
-      weather # Return cached weather data
+      weather
     else
-      # Get new data from OpenWeatherMap API
       api_key = WeatherApp.api_key
       r.halt(500, { error: "API key not found" }) unless api_key
 

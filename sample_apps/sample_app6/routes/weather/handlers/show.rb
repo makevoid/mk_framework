@@ -5,7 +5,7 @@ class WeatherShowHandler < MK::Handler
     raw_data = JSON.parse(model.data)
 
     # Format the weather data to be more useful
-    hourly_forecast = raw_data['list'].take(24) # Get forecast for next 24 hours
+    hourly_forecast = raw_data['list'].take(24)
 
     formatted_data = hourly_forecast.map do |hour|
       {
