@@ -8,6 +8,7 @@ require "json"
 require_relative '../app'
 require_relative '../../../lib_spec/mk_framework_spec_helpers'
 
+
 # Configure RSpec
 RSpec.configure do |config|
   config.include Rack::Test::Methods

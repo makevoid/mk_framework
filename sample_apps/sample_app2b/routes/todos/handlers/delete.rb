@@ -5,8 +5,7 @@ class TodosDeleteHandler < MK::Handler
     success do |r|
       {
         message: "Todo deleted successfully",
-        todo: model.to_hash,
-        custom_field: "Custom value for delete"
+        todo: model.to_hash
       }
     end
 

@@ -7,6 +7,7 @@ class TodosCreateHandler < MK::Handler
       {
         message: "Todo created",
         todo: model.to_hash,
+        custom_field: "Custom value for create"
       }
     end
 

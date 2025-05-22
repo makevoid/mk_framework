@@ -9,8 +9,6 @@ class TodosUpdateController < MK::Controller
     params = r.params
 
     todo.title = params['title'] if params.key?('title')
-    todo.description = params['description'] if params.key?('description')
-    todo.completed = params['completed'] if params.key?('completed')
 
     todo
   end

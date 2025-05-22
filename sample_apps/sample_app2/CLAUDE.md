@@ -1,4 +1,6 @@
-# MK Framework Guidelines
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Commands
 - Run server: `bundle exec rackup`
@@ -6,6 +8,14 @@
 - Run tests: `bundle exec rspec`
 - Run single test: `bundle exec rspec spec/path/to/file_spec.rb:LINE_NUMBER`
 - Linting: `bundle exec rubocop`
+
+## Application Architecture
+This is a RESTful Todo API built with the MK Framework, a lightweight Ruby web framework based on Roda. The application follows a clean separation of concerns:
+
+- **Models**: Define data schema and validation rules using Sequel::Model (`models/todo.rb`)
+- **Controllers**: Handle business logic and data operations (`routes/todos/controllers/`)
+- **Handlers**: Format responses and set HTTP status codes (`routes/todos/handlers/`)
+- **Application**: Main entry point that configures database and routes (`app.rb`)
 
 ## Code Style
 - Include `# frozen_string_literal: true` at the top of each Ruby file
@@ -28,91 +38,15 @@
 - Do not standardize HTTP methods across tests as this dual approach validates both patterns
 
 ## Route Structure
-- Framework uses a consistent RESTful routing pattern similar to Ruby on Rails and Sinatra:
+- Framework uses a consistent RESTful routing pattern:
   - GET /todos - index (list all)
   - GET /todos/:id - show (get one)
   - POST /todos - create
   - POST /todos/:id - update
   - POST /todos/:id/delete - delete
 
-
-## Gotchas when developing with the MK framework
-
-There are some gotchas when you have to to develop with the MK framework, they're noted here:
-
-## GOTCHA 1 - MK Framework Handler Error #
-
-When you see an error like this:
-
-```Run options: include {:locations=>{"./spec/request/weather_spec.rb"=>[17]}}
-ERROR: Roda::RodaError
-{
-  "request_info": {
-    "path": ...
-    "method": "GET",
-    "params": {
-      "id": ...
-    },
-    "message": "unsupported block result: #<WeatherShowHandler:0x0..., :fetched_at=>2025-05-18 06:37:14.068235 +0200}>>"
-  },
-  "trace": {
-    "relevant": [
-      "/Users/makevoid/apps/mk_framework/lib/mk_framework...:in `block (4 levels) in register_resource_routes'",
-      ...'",
-      "/Users/makevoid/apps/mk_framework/sample_apps/samp...ec.rb:18:in `block (4 levels) in <top (required)>'"
-    ]
-  }
-}
-F
-```
-
-this means that the handler is not returning the right result in the handler for weather / show - WeatherShowHandler - which you can find in `./routes/weather/handlers/show.rb`
-
----
-
-## GOTCHA 2 - MK Framework Handler Error #2
-
-This is wrong and you will receive an Handler Error
-
-```
-class WeatherIndexHandler < MK::Handler
-  handler do |r|
-    success do |r|
-      ...
-    end
-
-    ...
-  end
-end
-```
-
-This is correct, the code will work like this and return the value defined in the handler
-
-```
-class WeatherIndexHandler < MK::Handler
-  handler do |r|
-    ...
-  end
-end
-```
-
-Remember that in Index and Show handlers there is no `model.save` or `model.destroy` - they are handled by the framework internally between controller and handlers.
-
-## GOTCHA 3 - MK Framework Controller and Handlers use blocks, you can't return
-
-MK Framework Controller and Handlers use blocks, you can't return values from them. Instead, you should use the `next` block to pass control to the next handler using ruby blocks syntax.
-
-
-```
-handler do
-errors.merge!(user.errors)
-next # Stops execution if save fails
-```
-
-```
-class TodosIndexHandler < MK::Handler
-  handler do |r|
-    next if model.inactive?
-  end
-end
-```
+## Testing
+- Tests use RSpec with Rack::Test for HTTP request simulation
+- Test helpers are available in the MK::Framework::Spec module
+- Tests should clean up database state between examples (using `before` blocks)
+- Response data can be accessed through the `resp` helper method which parses JSON

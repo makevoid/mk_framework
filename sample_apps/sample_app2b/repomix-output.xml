@@ -1,0 +1,1415 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+4. Repository files, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+<additional_info>
+
+</additional_info>
+
+</file_summary>
+
+<directory_structure>
+.claude/
+  settings.local.json
+models/
+  todo.rb
+routes/
+  todos/
+    controllers/
+      create.rb
+      delete.rb
+      index.rb
+      show.rb
+      update.rb
+    handlers/
+      create.rb
+      delete.rb
+      index.rb
+      show.rb
+      update.rb
+spec/
+  request/
+    todos_spec.rb
+  spec_helper.rb
+.gitignore
+app.rb
+CLAUDE.md
+config.ru
+Gemfile
+Rakefile
+README.md
+ROUTES.md
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path=".claude/settings.local.json">
+{
+  "permissions": {
+    "allow": [
+      "Bash(bundle exec rspec:*)"
+    ],
+    "deny": []
+  }
+}
+</file>
+
+<file path="models/todo.rb">
+class Todo < Sequel::Model
+  plugin :validation_helpers
+
+  def validate
+    super
+    validates_presence [:title]
+    validates_max_length 100, :title
+  end
+end
+</file>
+
+<file path="routes/todos/controllers/create.rb">
+# frozen_string_literal: true
+
+class TodosCreateController < MK::Controller
+  route do |r|
+    Todo.new(
+      title: r.params['title'],
+      description: r.params['description'],
+      completed: r.params['completed'] || false
+    )
+  end
+end
+</file>
+
+<file path="routes/todos/controllers/delete.rb">
+# frozen_string_literal: true
+
+class TodosDeleteController < MK::Controller
+  route do |r|
+    todo = Todo[r.params.fetch('id')]
+
+    r.halt(404, { message: "todo not found" }) if todo.nil?
+
+    todo
+  end
+end
+</file>
+
+<file path="routes/todos/controllers/index.rb">
+# frozen_string_literal: true
+
+class TodosIndexController < MK::Controller
+  route do |r|
+    Todo.all
+  end
+end
+</file>
+
+<file path="routes/todos/controllers/show.rb">
+# frozen_string_literal: true
+
+class TodosShowController < MK::Controller
+  route do |r|
+    Todo[r.params.fetch('id')]
+  end
+end
+</file>
+
+<file path="routes/todos/controllers/update.rb">
+# frozen_string_literal: true
+
+class TodosUpdateController < MK::Controller
+  route do |r|
+    todo = Todo[r.params.fetch('id')]
+
+    r.halt(404, { message: "todo not found" }) if todo.nil?
+
+    params = r.params
+
+    todo.title = params['title'] if params.key?('title')
+    todo.description = params['description'] if params.key?('description')
+    todo.completed = params['completed'] if params.key?('completed')
+
+    todo
+  end
+end
+</file>
+
+<file path="routes/todos/handlers/create.rb">
+# frozen_string_literal: true
+
+class TodosCreateHandler < MK::Handler
+  handler do |r|
+    success do |r|
+      r.response.status = 201
+      {
+        message: "Todo created",
+        todo: model.to_hash,
+      }
+    end
+
+    error do |r|
+      r.response.status = 422
+      {
+        error: "Validation failed",
+        details: model.errors
+      }
+    end
+  end
+end
+</file>
+
+<file path="routes/todos/handlers/delete.rb">
+# frozen_string_literal: true
+
+class TodosDeleteHandler < MK::Handler
+  handler do |r|
+    success do |r|
+      {
+        message: "Todo deleted successfully",
+        todo: model.to_hash
+      }
+    end
+
+    error do |r|
+      r.response.status = 500
+      {
+        error: "Failed to delete todo"
+      }
+    end
+  end
+end
+</file>
+
+<file path="routes/todos/handlers/index.rb">
+# frozen_string_literal: true
+
+class TodosIndexHandler < MK::Handler
+  handler do |r|
+    # TODO: change model to resource in index route
+    model.map(&:to_hash)
+  end
+end
+</file>
+
+<file path="routes/todos/handlers/show.rb">
+# frozen_string_literal: true
+
+class TodosShowHandler < MK::Handler
+  handler do |r|
+    model.to_hash
+  end
+end
+</file>
+
+<file path="routes/todos/handlers/update.rb">
+# frozen_string_literal: true
+
+class TodosUpdateHandler < MK::Handler
+  handler do |r|
+    success do |r|
+      {
+        message: "Todo updated",
+        todo: model.to_hash,
+      }
+    end
+
+    error do |r|
+      r.response.status = 400
+      {
+        error: "Validation failed!",
+        details: model.errors
+      }
+    end
+  end
+end
+</file>
+
+<file path="spec/request/todos_spec.rb">
+# frozen_string_literal: true
+
+require 'spec_helper'
+
+describe "Todos" do
+  describe "GET /todos" do
+    before do
+      Todo.dataset.delete
+
+      @todo1 = Todo.create(
+        title: "First Todo",
+        description: "This is the first test todo",
+        completed: false
+      )
+
+      @todo2 = Todo.create(
+        title: "Second Todo",
+        description: "This is the second test todo",
+        completed: true
+      )
+    end
+
+    it "returns all todos" do
+      get '/todos'
+
+      expect(last_response.status).to eq 200
+
+      expect(resp.length).to eq 2
+
+      expect(resp[0][:id]).to eq @todo1.id
+      expect(resp[0][:title]).to eq "First Todo"
+      expect(resp[0][:description]).to eq "This is the first test todo"
+      expect(resp[0][:completed]).to eq false
+
+      expect(resp[1][:id]).to eq @todo2.id
+      expect(resp[1][:title]).to eq "Second Todo"
+      expect(resp[1][:description]).to eq "This is the second test todo"
+      expect(resp[1][:completed]).to eq true
+    end
+  end
+
+  describe "GET /todos/:id" do
+    before do
+      Todo.dataset.delete
+
+      @todo = Todo.create(
+        title: "Test Todo",
+        description: "This is a test todo",
+        completed: false
+      )
+    end
+
+    context "when todo exists" do
+      it "returns the todo" do
+        get "/todos/#{@todo.id}"
+
+        expect(last_response.status).to eq 200
+
+        expect(resp[:id]).to eq @todo.id
+        expect(resp[:title]).to eq "Test Todo"
+        expect(resp[:description]).to eq "This is a test todo"
+        expect(resp[:completed]).to eq false
+      end
+    end
+
+    context "when todo does not exist" do
+      it "returns a 404 error" do
+        get "/todos/999999"
+
+        expect(last_response.status).to eq 404
+        expect(resp[:error]).to eq "Todo not found"
+      end
+    end
+  end
+
+  describe "POST /todos" do
+    context "with valid parameters" do
+      it "creates a new todo" do
+        post '/todos', {
+          title: "Test Todo",
+          description: "This is a test todo"
+        }
+
+        expect(last_response.status).to eq 201
+
+        expect(resp[:message]).to eq "Todo created"
+        expect(resp[:todo][:title]).to eq "Test Todo"
+        expect(resp[:todo][:description]).to eq "This is a test todo"
+        expect(resp[:todo][:completed]).to eq false
+      end
+    end
+
+    context "with invalid parameters" do
+      it "returns validation errors when title is missing" do
+        post '/todos', {
+          description: "This todo has no title"
+        }
+
+        expect(last_response.status).to eq 422
+
+        expect(resp[:error]).to eq "Validation failed"
+        expect(resp[:details]).to have_key :title
+      end
+
+      it "returns validation errors when title is too long" do
+        post '/todos', {
+          title: "X" * 101,
+          description: "This todo has a title that is too long"
+        }
+
+        expect(last_response.status).to eq 422
+
+        expect(resp[:error]).to eq "Validation failed"
+        expect(resp[:details]).to have_key :title
+      end
+    end
+  end
+
+  describe "PUT /todos/:id" do
+    before do
+      Todo.dataset.delete
+
+      @todo = Todo.create(
+        title: "Original Title",
+        description: "Original Description",
+        completed: false
+      )
+    end
+
+    context "when todo exists" do
+      it "updates the todo title" do
+        post "/todos/#{@todo.id}", {
+          title: "Updated Title"
+        }
+
+        expect(last_response.status).to eq 200
+
+        expect(resp[:message]).to eq "Todo updated"
+        expect(resp[:todo][:id]).to eq @todo.id
+        expect(resp[:todo][:title]).to eq "Updated Title"
+        expect(resp[:todo][:description]).to eq "Original Description"
+        expect(resp[:todo][:completed]).to eq false
+      end
+
+      it "updates the todo description" do
+        post "/todos/#{@todo.id}", {
+          description: "Updated Description"
+        }
+
+        expect(last_response.status).to eq 200
+
+        expect(resp[:message]).to eq "Todo updated"
+        expect(resp[:todo][:id]).to eq @todo.id
+        expect(resp[:todo][:title]).to eq "Original Title"
+        expect(resp[:todo][:description]).to eq "Updated Description"
+        expect(resp[:todo][:completed]).to eq false
+      end
+
+      it "updates the todo completed status" do
+        post "/todos/#{@todo.id}", {
+          completed: true
+        }
+
+        expect(last_response.status).to eq 200
+
+        expect(resp[:message]).to eq "Todo updated"
+        expect(resp[:todo][:id]).to eq @todo.id
+        expect(resp[:todo][:title]).to eq "Original Title"
+        expect(resp[:todo][:description]).to eq "Original Description"
+        expect(resp[:todo][:completed]).to eq true
+      end
+
+      it "updates multiple fields at once" do
+        post "/todos/#{@todo.id}", {
+          title: "Completely Updated",
+          description: "New Description",
+          completed: true
+        }
+
+        expect(last_response.status).to eq 200
+
+        expect(resp[:message]).to eq "Todo updated"
+        expect(resp[:todo][:id]).to eq @todo.id
+        expect(resp[:todo][:title]).to eq "Completely Updated"
+        expect(resp[:todo][:description]).to eq "New Description"
+        expect(resp[:todo][:completed]).to eq true
+      end
+
+      it "returns validation errors when title is too long" do
+        post "/todos/#{@todo.id}", {
+          title: "X" * 101
+        }
+
+        expect(last_response.status).to eq 400
+
+        expect(resp[:error]).to eq "Validation failed!"
+        expect(resp[:details]).to have_key :title
+      end
+    end
+
+    context "when todo does not exist" do
+      it "returns a 404 error" do
+        post "/todos/999999", {
+          title: "Updated Title"
+        }
+
+        expect(last_response.status).to eq 404
+        expect(resp[:message]).to eq "todo not found"
+      end
+    end
+  end
+
+  describe "DELETE /todos/:id" do
+    before do
+      Todo.dataset.delete
+
+      @todo = Todo.create(
+        title: "Todo to Delete",
+        description: "This todo will be deleted",
+        completed: false
+      )
+    end
+
+    context "when todo exists" do
+      it "deletes the todo" do
+        post "/todos/#{@todo.id}/delete"
+
+        expect(last_response.status).to eq 200
+
+        expect(resp[:message]).to eq "Todo deleted successfully"
+        expect(resp[:todo][:id]).to eq @todo.id
+        expect(resp[:todo][:title]).to eq "Todo to Delete"
+        expect(resp[:todo][:description]).to eq "This todo will be deleted"
+        expect(resp[:todo][:completed]).to eq false
+
+        # Verify that the todo was actually deleted from the database
+        expect(Todo[@todo.id]).to be_nil
+      end
+    end
+
+    context "when todo does not exist" do
+      it "returns a 404 error" do
+        delete "/todos/999999"
+
+        expect(last_response.status).to eq 404
+        expect(resp[:error]).to eq "Todo not found"
+      end
+    end
+  end
+end
+</file>
+
+<file path="spec/spec_helper.rb">
+# frozen_string_literal: true
+
+require "rspec"
+require "rack/test"
+require "json"
+
+# Load the application
+require_relative '../app'
+require_relative '../../../lib_spec/mk_framework_spec_helpers'
+
+
+# Configure RSpec
+RSpec.configure do |config|
+  config.include Rack::Test::Methods
+
+  def app
+    TodoApp.app
+  end
+
+  config.include MK::Framework::Spec
+end
+</file>
+
+<file path=".gitignore">
+*.db
+</file>
+
+<file path="app.rb">
+# frozen_string_literal: true
+
+require 'sequel'
+require 'json'
+require 'roda'
+require_relative '../../lib/mk_framework'
+
+# Set up database connection
+DB = Sequel.connect('sqlite://todos.db')
+
+# Create todos table if it doesn't exist
+DB.create_table? :todos do
+  primary_key :id
+  String :title, null: false
+  String :description
+  TrueClass :completed, default: false
+  DateTime :created_at, default: Sequel::CURRENT_TIMESTAMP
+  DateTime :updated_at, default: Sequel::CURRENT_TIMESTAMP
+end
+
+# Require models
+require_relative 'models/todo'
+
+# Create application instance
+class TodoApp < MK::Application
+  register_cors_domain 'http://localhost:3001'
+end
+</file>
+
+<file path="CLAUDE.md">
+# MK Framework Guidelines
+
+## Commands
+- Run server: `bundle exec rackup`
+- Install dependencies: `bundle install`
+- Run tests: `bundle exec rspec`
+- Run single test: `bundle exec rspec spec/path/to/file_spec.rb:LINE_NUMBER`
+- Linting: `bundle exec rubocop`
+
+## Code Style
+- Include `# frozen_string_literal: true` at the top of each Ruby file
+- Follow Ruby naming conventions: snake_case for methods/variables, CamelCase for classes
+- RESTful architecture with controller/handler separation
+- Controllers handle data retrieval and business logic
+- Handlers handle response formatting and HTTP status
+- Models use Sequel::Model with validation_helpers plugin
+- Error handling: use r.halt for interrupting execution, handlers for formatting errors
+- Resource routing follows RESTful convention (index, show, create, update, delete)
+- Keep methods small and focused on a single responsibility
+- Explicit requires over autoloading
+- Use fetch for required parameters, direct access for optional ones
+
+## HTTP Method Conventions
+- Framework uses non-standard HTTP method conventions for some operations
+- DELETE operations use POST to "/:resource/:id/delete" instead of DELETE method
+- UPDATE operations use POST to "/:resource/:id" instead of PUT/PATCH
+- Test both standard (delete "/todos/:id") and framework-specific (post "/todos/:id/delete") methods
+- Do not standardize HTTP methods across tests as this dual approach validates both patterns
+
+## Route Structure
+- Framework uses a consistent RESTful routing pattern similar to Ruby on Rails and Sinatra:
+  - GET /todos - index (list all)
+  - GET /todos/:id - show (get one)
+  - POST /todos - create
+  - POST /todos/:id - update
+  - POST /todos/:id/delete - delete
+
+
+## Gotchas when developing with the MK framework
+
+There are some gotchas when you have to to develop with the MK framework, they're noted here:
+
+## GOTCHA 1 - MK Framework Handler Error #
+
+When you see an error like this:
+
+```Run options: include {:locations=>{"./spec/request/weather_spec.rb"=>[17]}}
+ERROR: Roda::RodaError
+{
+  "request_info": {
+    "path": ...
+    "method": "GET",
+    "params": {
+      "id": ...
+    },
+    "message": "unsupported block result: #<WeatherShowHandler:0x0..., :fetched_at=>2025-05-18 06:37:14.068235 +0200}>>"
+  },
+  "trace": {
+    "relevant": [
+      "/Users/makevoid/apps/mk_framework/lib/mk_framework...:in `block (4 levels) in register_resource_routes'",
+      ...'",
+      "/Users/makevoid/apps/mk_framework/sample_apps/samp...ec.rb:18:in `block (4 levels) in <top (required)>'"
+    ]
+  }
+}
+F
+```
+
+this means that the handler is not returning the right result in the handler for weather / show - WeatherShowHandler - which you can find in `./routes/weather/handlers/show.rb`
+
+---
+
+## GOTCHA 2 - MK Framework Handler Error #2
+
+This is wrong and you will receive an Handler Error
+
+```
+class WeatherIndexHandler < MK::Handler
+  handler do |r|
+    success do |r|
+      ...
+    end
+
+    ...
+  end
+end
+```
+
+This is correct, the code will work like this and return the value defined in the handler
+
+```
+class WeatherIndexHandler < MK::Handler
+  handler do |r|
+    ...
+  end
+end
+```
+
+Remember that in Index and Show handlers there is no `model.save` or `model.destroy` - they are handled by the framework internally between controller and handlers.
+
+## GOTCHA 3 - MK Framework Controller and Handlers use blocks, you can't return
+
+MK Framework Controller and Handlers use blocks, you can't return values from them. Instead, you should use the `next` block to pass control to the next handler using ruby blocks syntax.
+
+
+```
+handler do
+errors.merge!(user.errors)
+next # Stops execution if save fails
+```
+
+```
+class TodosIndexHandler < MK::Handler
+  handler do |r|
+    next if model.inactive?
+  end
+end
+```
+</file>
+
+<file path="config.ru">
+# frozen_string_literal: true
+
+require_relative 'app'
+
+# Run the TodoApp class directly as a Rack app
+run TodoApp
+</file>
+
+<file path="Gemfile">
+source "https://rubygems.org"
+
+gem "roda"
+gem "sequel"
+gem "sqlite3"
+gem "json"
+gem "rake"
+gem "rackup"
+gem "puma"
+gem "logger"
+
+gem "rspec"
+gem "rack-test"
+</file>
+
+<file path="Rakefile">
+task :run do
+  sh "bundle exec rackup -p 3000"
+end
+
+task :spec do
+  sh "bundle exec rspec"
+end
+
+task default: :run
+</file>
+
+<file path="README.md">
+# Todo List API
+
+A RESTful API for managing todo items built with the MK Framework, a lightweight Ruby web framework based on Roda.
+
+## Overview
+
+This application demonstrates a clean separation of concerns with a RESTful architecture:
+
+- **Controllers**: Handle data retrieval and business logic
+- **Handlers**: Format responses and set HTTP status codes
+- **Models**: Define data structure and validation rules
+
+## Features
+
+- Create, read, update and delete todo items
+- Input validation
+- JSON response formatting
+- SQLite database storage
+- RESTful API design
+
+## Installation
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd sample_app2
+
+# Install dependencies
+bundle install
+
+# Start the server
+bundle exec rackup
+```
+
+The server will start on http://localhost:9292
+
+## API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/todos` | GET | List all todos |
+| `/todos/:id` | GET | Get a specific todo |
+| `/todos` | POST | Create a new todo |
+| `/todos/:id` | POST | Update a todo |
+| `/todos/:id/delete` | POST | Delete a todo |
+
+### Request/Response Examples
+
+#### List all todos
+
+```
+GET /todos
+```
+
+Response:
+```json
+[
+  {
+    "id": 1,
+    "title": "Buy groceries",
+    "description": "Milk, eggs, bread",
+    "completed": false,
+    "created_at": "2023-01-01T12:00:00Z",
+    "updated_at": "2023-01-01T12:00:00Z"
+  },
+  {
+    "id": 2,
+    "title": "Finish project",
+    "description": "Complete the todo API",
+    "completed": true,
+    "created_at": "2023-01-02T10:00:00Z",
+    "updated_at": "2023-01-02T15:30:00Z"
+  }
+]
+```
+
+#### Get a specific todo
+
+```
+GET /todos/1
+```
+
+Response:
+```json
+{
+  "id": 1,
+  "title": "Buy groceries",
+  "description": "Milk, eggs, bread",
+  "completed": false,
+  "created_at": "2023-01-01T12:00:00Z",
+  "updated_at": "2023-01-01T12:00:00Z"
+}
+```
+
+#### Create a new todo
+
+```
+POST /todos
+```
+
+Request body:
+```json
+{
+  "title": "Learn Ruby",
+  "description": "Study MK Framework",
+  "completed": false
+}
+```
+
+Response:
+```json
+{
+  "id": 3,
+  "title": "Learn Ruby",
+  "description": "Study MK Framework",
+  "completed": false,
+  "created_at": "2023-01-03T09:00:00Z",
+  "updated_at": "2023-01-03T09:00:00Z"
+}
+```
+
+#### Update a todo
+
+```
+POST /todos/1
+```
+
+Request body:
+```json
+{
+  "completed": true
+}
+```
+
+Response:
+```json
+{
+  "id": 1,
+  "title": "Buy groceries",
+  "description": "Milk, eggs, bread",
+  "completed": true,
+  "created_at": "2023-01-01T12:00:00Z",
+  "updated_at": "2023-01-03T14:00:00Z"
+}
+```
+
+#### Delete a todo
+
+```
+POST /todos/1/delete
+```
+
+Response:
+```json
+{
+  "success": true
+}
+```
+
+## Architecture
+
+The application follows a structured architecture:
+
+1. **Models** (`models/todo.rb`): Define the data schema and validation rules
+2. **Controllers** (`routes/todos/controllers/`): Handle business logic and data operations
+3. **Handlers** (`routes/todos/handlers/`): Format responses and set HTTP status codes
+4. **Application** (`app.rb`): Configure the database and set up the application
+
+## Testing
+
+Run the test suite with:
+
+```bash
+bundle exec rspec
+```
+
+## Framework Notes
+
+The MK Framework has some unique conventions:
+
+- DELETE operations use POST to `/:resource/:id/delete` instead of DELETE method
+- UPDATE operations use POST to `/:resource/:id` instead of PUT/PATCH
+- Controllers handle data operations, handlers manage response formatting
+</file>
+
+<file path="ROUTES.md">
+# Building a Next.js + Tailwind CSS Frontend for Todo API
+
+This guide explains how to implement a frontend application using Next.js and Tailwind CSS that interacts with the MK Framework Todo API.
+
+## Setup
+
+### 1. Create Next.js Project
+
+```bash
+# Create a new Next.js project
+npx create-next-app@latest todo-frontend
+cd todo-frontend
+
+# Answer the following questions:
+# ✓ Would you like to use TypeScript? Yes
+# ✓ Would you like to use ESLint? Yes
+# ✓ Would you like to use Tailwind CSS? Yes
+# ✓ Would you like to use `src/` directory? Yes
+# ✓ Would you like to use App Router? Yes
+# ✓ Would you like to customize the default import alias? No
+```
+
+### 2. Configure API Connection
+
+Create a utility file to handle API requests:
+
+```bash
+mkdir -p src/lib
+touch src/lib/api.ts
+```
+
+## API Integration
+
+### API Utility Module
+
+Add the following code to `src/lib/api.ts`:
+
+```typescript
+// API base URL
+const API_URL = 'http://localhost:9292';
+
+// Todo interface
+export interface Todo {
+  id: number;
+  title: string;
+  description?: string;
+  completed: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// API response interfaces
+export interface TodoCreatedResponse {
+  message: string;
+  todo: Todo;
+}
+
+export interface TodoUpdatedResponse {
+  message: string;
+  todo: Todo;
+}
+
+export interface TodoDeletedResponse {
+  message: string;
+  todo: Todo;
+}
+
+export interface ApiError {
+  error: string;
+  details?: Record<string, string[]>;
+}
+
+// API methods
+export const api = {
+  // Get all todos
+  async getTodos(): Promise<Todo[]> {
+    const response = await fetch(`${API_URL}/todos`);
+    
+    if (!response.ok) {
+      const error = await response.json() as ApiError;
+      throw new Error(error.error || 'Failed to fetch todos');
+    }
+    
+    return response.json();
+  },
+  
+  // Get a specific todo
+  async getTodo(id: number): Promise<Todo> {
+    const response = await fetch(`${API_URL}/todos/${id}`);
+    
+    if (!response.ok) {
+      const error = await response.json() as ApiError;
+      throw new Error(error.error || 'Failed to fetch todo');
+    }
+    
+    return response.json();
+  },
+  
+  // Create a new todo
+  async createTodo(data: {
+    title: string;
+    description?: string;
+    completed?: boolean;
+  }): Promise<TodoCreatedResponse> {
+    const response = await fetch(`${API_URL}/todos`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      const error = await response.json() as ApiError;
+      throw new Error(error.error || 'Failed to create todo');
+    }
+    
+    return response.json();
+  },
+  
+  // Update a todo
+  async updateTodo(id: number, data: {
+    title?: string;
+    description?: string;
+    completed?: boolean;
+  }): Promise<TodoUpdatedResponse> {
+    const response = await fetch(`${API_URL}/todos/${id}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    
+    if (!response.ok) {
+      const error = await response.json() as ApiError;
+      throw new Error(error.error || 'Failed to update todo');
+    }
+    
+    return response.json();
+  },
+  
+  // Delete a todo
+  async deleteTodo(id: number): Promise<TodoDeletedResponse> {
+    const response = await fetch(`${API_URL}/todos/${id}/delete`, {
+      method: 'POST',
+    });
+    
+    if (!response.ok) {
+      const error = await response.json() as ApiError;
+      throw new Error(error.error || 'Failed to delete todo');
+    }
+    
+    return response.json();
+  }
+};
+```
+
+## Frontend Components
+
+### 1. Todo List Component
+
+Create a component to display all todos:
+
+```tsx
+// src/components/TodoList.tsx
+'use client';
+
+import { useEffect, useState } from 'react';
+import { api, Todo } from '@/lib/api';
+import TodoItem from './TodoItem';
+import AddTodoForm from './AddTodoForm';
+
+export default function TodoList() {
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadTodos();
+  }, []);
+
+  async function loadTodos() {
+    try {
+      setLoading(true);
+      const data = await api.getTodos();
+      setTodos(data);
+      setError(null);
+    } catch (err) {
+      setError('Failed to load todos');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleAddTodo(title: string, description: string) {
+    try {
+      const response = await api.createTodo({ title, description });
+      setTodos([...todos, response.todo]);
+    } catch (err) {
+      setError('Failed to add todo');
+      console.error(err);
+    }
+  }
+
+  async function handleToggleComplete(id: number, completed: boolean) {
+    try {
+      await api.updateTodo(id, { completed });
+      setTodos(todos.map(todo => 
+        todo.id === id ? { ...todo, completed } : todo
+      ));
+    } catch (err) {
+      setError('Failed to update todo');
+      console.error(err);
+    }
+  }
+
+  async function handleDeleteTodo(id: number) {
+    try {
+      await api.deleteTodo(id);
+      setTodos(todos.filter(todo => todo.id !== id));
+    } catch (err) {
+      setError('Failed to delete todo');
+      console.error(err);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex justify-center p-8">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-6 text-center">Todo List</h1>
+      
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+        </div>
+      )}
+      
+      <AddTodoForm onAddTodo={handleAddTodo} />
+      
+      <div className="mt-8 space-y-4">
+        {todos.length === 0 ? (
+          <p className="text-center text-gray-500">No todos yet. Add one above!</p>
+        ) : (
+          todos.map(todo => (
+            <TodoItem 
+              key={todo.id} 
+              todo={todo} 
+              onToggleComplete={handleToggleComplete}
+              onDelete={handleDeleteTodo}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+### 2. Todo Item Component
+
+Create a component for individual todos:
+
+```tsx
+// src/components/TodoItem.tsx
+import { Todo } from '@/lib/api';
+
+interface TodoItemProps {
+  todo: Todo;
+  onToggleComplete: (id: number, completed: boolean) => void;
+  onDelete: (id: number) => void;
+}
+
+export default function TodoItem({ todo, onToggleComplete, onDelete }: TodoItemProps) {
+  return (
+    <div className="bg-white shadow rounded-lg p-4 flex items-start justify-between">
+      <div className="flex items-start space-x-3">
+        <input
+          type="checkbox"
+          checked={todo.completed}
+          onChange={() => onToggleComplete(todo.id, !todo.completed)}
+          className="mt-1 h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+        />
+        <div>
+          <h3 className={`text-lg font-medium ${todo.completed ? 'line-through text-gray-400' : 'text-gray-800'}`}>
+            {todo.title}
+          </h3>
+          {todo.description && (
+            <p className={`mt-1 text-sm ${todo.completed ? 'text-gray-400' : 'text-gray-600'}`}>
+              {todo.description}
+            </p>
+          )}
+          <p className="text-xs text-gray-400 mt-1">
+            Created: {new Date(todo.created_at).toLocaleString()}
+          </p>
+        </div>
+      </div>
+      
+      <button
+        onClick={() => onDelete(todo.id)}
+        className="text-red-500 hover:text-red-700 focus:outline-none"
+      >
+        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+        </svg>
+      </button>
+    </div>
+  );
+}
+```
+
+### 3. Add Todo Form Component
+
+Create a form for adding new todos:
+
+```tsx
+// src/components/AddTodoForm.tsx
+import { useState } from 'react';
+
+interface AddTodoFormProps {
+  onAddTodo: (title: string, description: string) => void;
+}
+
+export default function AddTodoForm({ onAddTodo }: AddTodoFormProps) {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    
+    if (!title.trim()) {
+      setError('Title is required');
+      return;
+    }
+    
+    if (title.length > 100) {
+      setError('Title must be less than 100 characters');
+      return;
+    }
+    
+    onAddTodo(title, description);
+    setTitle('');
+    setDescription('');
+    setError(null);
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-6">
+      <h2 className="text-xl font-semibold mb-4">Add New Todo</h2>
+      
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4 text-sm">
+          {error}
+        </div>
+      )}
+      
+      <div className="mb-4">
+        <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+          Title <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          id="title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          placeholder="Enter todo title"
+        />
+      </div>
+      
+      <div className="mb-4">
+        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+          Description
+        </label>
+        <textarea
+          id="description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+          placeholder="Enter todo description (optional)"
+          rows={3}
+        />
+      </div>
+      
+      <button
+        type="submit"
+        className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      >
+        Add Todo
+      </button>
+    </form>
+  );
+}
+```
+
+### 4. Main Page Component
+
+Set up the main page of your application:
+
+```tsx
+// src/app/page.tsx
+import TodoList from '@/components/TodoList';
+
+export default function Home() {
+  return (
+    <main className="min-h-screen bg-gray-50 py-8">
+      <TodoList />
+    </main>
+  );
+}
+```
+
+## CORS Configuration
+
+For the API to accept requests from your Next.js frontend, you'll need to enable CORS on the Ruby backend. Add the following to your `app.rb` file:
+
+```ruby
+# Inside the TodoApp class
+
+plugin :cors
+route do |r|
+  # Set CORS headers
+  response['Access-Control-Allow-Origin'] = 'http://localhost:3000'
+  response['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+  response['Access-Control-Allow-Headers'] = 'Content-Type'
+  
+  # Handle OPTIONS requests for CORS preflight
+  if r.options
+    response.status = 200
+    ""
+  else
+    # Your existing route code here
+  end
+end
+```
+
+## Running the Application
+
+1. Start the Ruby backend:
+
+```bash
+# In the sample_app2 directory
+bundle exec rackup
+```
+
+2. Start the Next.js development server:
+
+```bash
+# In the todo-frontend directory
+npm run dev
+```
+
+3. Open your browser to `http://localhost:3000` to use the application
+
+## Key Frontend Implementation Notes
+
+### API Integration
+- **Framework-specific methods**: The API utility adapts to the MK Framework's non-standard HTTP method conventions
+- **Error Handling**: Each API call includes proper error handling
+
+### Component Structure
+- **TodoList**: Top-level component that fetches and manages todos
+- **TodoItem**: Displays individual todos with completion toggle and delete functionality
+- **AddTodoForm**: Handles creation of new todos with validation
+
+### Form Validation
+- Validates inputs according to API requirements (title presence, max length)
+- Provides user feedback for validation errors
+
+### State Management
+- Uses React's useState for local state management
+- Data fetching with useEffect hook
+
+### Styling
+- Uses Tailwind CSS for consistent, responsive design
+- Conditional styling based on todo state (completed/incomplete)
+
+## Next Steps
+
+1. **Authentication**: Add user authentication if you expand the API
+2. **Edit functionality**: Implement a form to edit existing todos
+3. **Filtering and Sorting**: Add UI controls to filter by completion status or sort by date
+4. **Pagination**: Implement pagination for large todo lists
+5. **Toast Notifications**: Add success/error feedback using a toast notification library
+6. **Persistence**: Add local storage backup for offline functionality
+</file>
+
+</files>
