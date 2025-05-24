@@ -1,13 +1,11 @@
 # frozen_string_literal: true
 
-class TodosCreateHandler < MK::Handler
+class BookingsUpdateHandler < MK::Handler
   handler do |r|
     success do |r|
-      r.response.status = 201
       {
-        message: "Todo created",
-        todo: model.to_hash,
-        custom_field: "Custom value for create"
+        message: "Booking updated",
+        booking: model.to_hash,
       }
     end
 
