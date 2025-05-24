@@ -467,6 +467,6 @@ module MK
         raise e  # Re-raise to be caught by the application error handler
       end
     end
-    
+
   end
 end
