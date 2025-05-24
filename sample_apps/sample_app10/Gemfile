@@ -8,6 +8,7 @@ gem "rake"
 gem "rackup"
 gem "puma"
 gem "logger"
+gem "bcrypt"
 
 gem "rspec"
 gem "rack-test"

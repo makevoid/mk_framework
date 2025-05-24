@@ -13,7 +13,7 @@ RSpec.configure do |config|
   config.include Rack::Test::Methods
 
   def app
-    TodoApp.app
+    ProjectManagementApp.app
   end
 
   config.include MK::Framework::Spec

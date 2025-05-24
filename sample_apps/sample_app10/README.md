@@ -1,183 +1,99 @@
-# Todo List API
+# Project Management System API
 
-A RESTful API for managing todo items built with the MK Framework, a lightweight Ruby web framework based on Roda.
-
-## Overview
-
-This application demonstrates a clean separation of concerns with a RESTful architecture:
-
-- **Controllers**: Handle data retrieval and business logic
-- **Handlers**: Format responses and set HTTP status codes
-- **Models**: Define data structure and validation rules
+A comprehensive project management system built with the MK Framework. This API allows teams to manage projects, tasks, and collaborate effectively.
 
 ## Features
 
-- Create, read, update and delete todo items
-- Input validation
-- JSON response formatting
-- SQLite database storage
-- RESTful API design
+- **Project Management**: Create and manage projects with different statuses
+- **Task Tracking**: Assign tasks, set priorities, track progress
+- **Team Collaboration**: Multiple users with different roles
+- **Comments System**: Add comments to tasks for better communication
+- **Status Tracking**: Monitor project and task progress
+- **Time Tracking**: Estimate and track actual hours spent on tasks
 
-## Installation
+## Data Model
 
+### Users
+- Roles: admin, manager, member
+- Can own projects and be assigned to tasks
+- Password authentication with bcrypt
+
+### Projects
+- Status: active, completed, archived, on_hold
+- Track start and end dates
+- Owned by users
+- Contains multiple tasks
+
+### Tasks
+- Status: todo, in_progress, review, done
+- Priority: low, medium, high, critical
+- Can be assigned to users
+- Track estimated vs actual hours
+- Support due dates and completion tracking
+
+### Comments
+- Attached to tasks
+- Created by users
+- Support threaded discussions
+
+## Setup
+
+1. Install dependencies:
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd sample_app2
-
-# Install dependencies
 bundle install
+```
 
-# Start the server
+2. Run the server:
+```bash
 bundle exec rackup
 ```
 
-The server will start on http://localhost:9292
-
-## API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/todos` | GET | List all todos |
-| `/todos/:id` | GET | Get a specific todo |
-| `/todos` | POST | Create a new todo |
-| `/todos/:id` | POST | Update a todo |
-| `/todos/:id/delete` | POST | Delete a todo |
-
-### Request/Response Examples
-
-#### List all todos
-
-```
-GET /todos
-```
-
-Response:
-```json
-[
-  {
-    "id": 1,
-    "title": "Buy groceries",
-    "description": "Milk, eggs, bread",
-    "completed": false,
-    "created_at": "2023-01-01T12:00:00Z",
-    "updated_at": "2023-01-01T12:00:00Z"
-  },
-  {
-    "id": 2,
-    "title": "Finish project",
-    "description": "Complete the todo API",
-    "completed": true,
-    "created_at": "2023-01-02T10:00:00Z",
-    "updated_at": "2023-01-02T15:30:00Z"
-  }
-]
-```
-
-#### Get a specific todo
-
-```
-GET /todos/1
-```
-
-Response:
-```json
-{
-  "id": 1,
-  "title": "Buy groceries",
-  "description": "Milk, eggs, bread",
-  "completed": false,
-  "created_at": "2023-01-01T12:00:00Z",
-  "updated_at": "2023-01-01T12:00:00Z"
-}
-```
-
-#### Create a new todo
-
-```
-POST /todos
-```
-
-Request body:
-```json
-{
-  "title": "Learn Ruby",
-  "description": "Study MK Framework",
-  "completed": false
-}
-```
-
-Response:
-```json
-{
-  "id": 3,
-  "title": "Learn Ruby",
-  "description": "Study MK Framework",
-  "completed": false,
-  "created_at": "2023-01-03T09:00:00Z",
-  "updated_at": "2023-01-03T09:00:00Z"
-}
-```
-
-#### Update a todo
-
-```
-POST /todos/1
-```
-
-Request body:
-```json
-{
-  "completed": true
-}
-```
-
-Response:
-```json
-{
-  "id": 1,
-  "title": "Buy groceries",
-  "description": "Milk, eggs, bread",
-  "completed": true,
-  "created_at": "2023-01-01T12:00:00Z",
-  "updated_at": "2023-01-03T14:00:00Z"
-}
-```
-
-#### Delete a todo
-
-```
-POST /todos/1/delete
-```
-
-Response:
-```json
-{
-  "success": true
-}
+3. Run tests:
+```bash
+bundle exec rspec
 ```
 
 ## Architecture
 
-The application follows a structured architecture:
+The application follows the MK Framework patterns:
 
-1. **Models** (`models/todo.rb`): Define the data schema and validation rules
-2. **Controllers** (`routes/todos/controllers/`): Handle business logic and data operations
-3. **Handlers** (`routes/todos/handlers/`): Format responses and set HTTP status codes
-4. **Application** (`app.rb`): Configure the database and set up the application
+- **Models**: Business logic and data validation
+- **Controllers**: Handle requests and data operations
+- **Handlers**: Format responses and set HTTP status codes
+- **Clean separation**: Each component has a single responsibility
+
+## Key Features Implementation
+
+### Task Assignment System
+Tasks can be assigned to team members with a dedicated endpoint that validates both task and user existence.
+
+### Project Statistics
+Projects can return detailed statistics about their tasks, including counts by status.
+
+### Overdue Task Detection
+The system automatically detects overdue tasks based on due dates and completion status.
+
+### Soft Delete / Archive
+Projects can be archived instead of deleted, preserving historical data.
+
+### Time Tracking
+Tasks support both estimated and actual hours for better project planning.
 
 ## Testing
 
-Run the test suite with:
+The application includes comprehensive test coverage for all endpoints. Run tests with:
 
 ```bash
 bundle exec rspec
 ```
 
-## Framework Notes
+## Future Enhancements
 
-The MK Framework has some unique conventions:
-
-- DELETE operations use POST to `/:resource/:id/delete` instead of DELETE method
-- UPDATE operations use POST to `/:resource/:id` instead of PUT/PATCH
-- Controllers handle data operations, handlers manage response formatting
+- Authentication and authorization
+- File attachments for tasks
+- Task dependencies
+- Recurring tasks
+- Email notifications
+- Activity logs
+- Team workload visualization
+- Gantt chart data endpoints

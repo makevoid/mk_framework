@@ -1,20 +1,19 @@
 # frozen_string_literal: true
 
-class TodosCreateHandler < MK::Handler
+class UsersCreateHandler < MK::Handler
   handler do |r|
     success do |r|
       r.response.status = 201
       {
-        message: "Todo created",
-        todo: model.to_hash,
-        custom_field: "Custom value for create"
+        message: "User created successfully",
+        user: model.to_hash
       }
     end
-
+    
     error do |r|
       r.response.status = 422
       {
-        error: "Validation failed",
+        error: "Failed to create user",
         details: model.errors
       }
     end
