@@ -9,9 +9,23 @@ def run_tests
   end
 end
 
+def run_repomix
+  DIRS.each do |dir|
+    puts "Generating repomix on dir: #{dir}..."
+    puts "-" * 80
+    system("cd ./#{dir} && repomix --include '**/*.rb'")
+  end
+end
+
 desc 'Run tests for all sample apps'
 task :test do
   run_tests
+end
+
+desc 'Run repomix for all sample apps'
+task :repomix do
+  run_repomix
+  system "cat sample_app*/repomix-output.xml > ./repomix-output.xml"
 end
 
 task default: :test
