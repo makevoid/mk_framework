@@ -111,18 +111,18 @@ describe "E-commerce API" do
         expect(last_response.status).to eq 200
         expect(resp[:session_id]).to eq @session_id
         expect(resp[:total]).to eq 0.0
-        expect(resp[:items]).to be_empty
+        expect(resp[:cart_items]).to be_empty
       end
     end
 
-    describe "POST /carts/:session_id/products" do
+    describe "POST /carts (add item)" do
       it "adds item to cart" do
-        post "/carts/#{@session_id}/products", {
+        post "/carts", {
+          session_id: @session_id,
           product_id: @product.id,
           quantity: 2
         }
 
-        
         expect(last_response.status).to eq 200
         expect(resp[:message]).to eq "Item added to cart"
         expect(resp[:cart][:total]).to eq 20.0
@@ -130,13 +130,72 @@ describe "E-commerce API" do
       end
 
       it "returns error for insufficient stock" do
-        post "/carts/#{@session_id}/products", {
+        post "/carts", {
+          session_id: @session_id,
           product_id: @product.id,
           quantity: 150
         }
 
         expect(last_response.status).to eq 422
         expect(resp[:error]).to eq "Insufficient stock"
+      end
+    end
+
+    describe "POST /carts/:id (update cart)" do
+      before do
+        @cart = Cart.create(session_id: @session_id)
+        @cart_item = @cart.add_item(@product, 1)
+      end
+
+      it "updates cart item quantity" do
+        post "/carts/#{@session_id}", {
+          item_id: @cart_item.id,
+          quantity: 3
+        }
+
+        expect(last_response.status).to eq 200
+        expect(resp[:message]).to eq "Cart updated successfully"
+        expect(resp[:cart][:total]).to eq 30.0
+        expect(resp[:cart][:item_count]).to eq 3
+      end
+
+      it "returns error for insufficient stock on update" do
+        post "/carts/#{@session_id}", {
+          item_id: @cart_item.id,
+          quantity: 150
+        }
+
+        expect(last_response.status).to eq 422
+        expect(resp[:error]).to eq "Insufficient stock"
+      end
+    end
+
+    describe "POST /carts/:id/delete (remove item)" do
+      before do
+        @cart = Cart.create(session_id: @session_id)
+        @cart_item = @cart.add_item(@product, 2)
+      end
+
+      it "removes specific item from cart" do
+        post "/carts/#{@session_id}/delete", {
+          item_id: @cart_item.id
+        }
+
+        expect(last_response.status).to eq 200
+        expect(resp[:message]).to eq "Item removed from cart"
+        expect(resp[:cart][:total]).to eq 0.0
+        expect(resp[:cart][:item_count]).to eq 0
+      end
+
+      it "clears entire cart" do
+        post "/carts/#{@session_id}/delete", {
+          action: "clear"
+        }
+
+        expect(last_response.status).to eq 200
+        expect(resp[:message]).to eq "Cart cleared"
+        expect(resp[:cart][:total]).to eq 0.0
+        expect(resp[:cart][:item_count]).to eq 0
       end
     end
   end
@@ -160,16 +219,14 @@ describe "E-commerce API" do
       @cart.add_item(@product, 2)
     end
 
-    describe "POST /checkouts" do
+    describe "POST /checkout" do
       it "creates order and reduces stock" do
         initial_stock = @product.stock
         
-        post '/checkouts', {
+        post '/checkout', {
           session_id: @session_id,
           customer_email: "test@example.com",
-          customer_name: "John Doe",
-          shipping_address: "123 Main St",
-          payment_method: "credit_card"
+          customer_name: "John Doe"
         }
 
         expect(last_response.status).to eq 201
@@ -189,11 +246,10 @@ describe "E-commerce API" do
       it "returns error for empty cart" do
         empty_cart = Cart.create(session_id: "empty_session")
         
-        post '/checkouts', {
+        post '/checkout', {
           session_id: "empty_session",
           customer_email: "test@example.com",
-          customer_name: "John Doe",
-          shipping_address: "123 Main St"
+          customer_name: "John Doe"
         }
 
         expect(last_response.status).to eq 422

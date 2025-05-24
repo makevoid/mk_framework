@@ -48,7 +48,7 @@ class Cart < Sequel::Model
       session_id: session_id,
       total: total.to_f,
       item_count: item_count,
-      items: cart_items.map(&:to_hash),
+      cart_items: cart_items.map(&:to_hash),
       created_at: created_at,
       updated_at: updated_at
     }
