@@ -70,5 +70,5 @@ class EcommerceApp < MK::Application
   register_cors_domain 'http://localhost:3001'
 
 
-  register_nested_resource('carts', 'items')
+  register_nested_resource('carts', 'products')
 end

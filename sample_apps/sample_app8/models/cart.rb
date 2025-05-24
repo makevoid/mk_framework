@@ -17,7 +17,7 @@ class Cart < Sequel::Model
   end
 
   def item_count
-    cart_items.sum(:quantity)
+    cart_items.sum { |item| item.quantity }
   end
 
   def empty?

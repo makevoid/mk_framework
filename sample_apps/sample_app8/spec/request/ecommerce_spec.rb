@@ -115,9 +115,9 @@ describe "E-commerce API" do
       end
     end
 
-    describe "POST /carts/:session_id/items" do
+    describe "POST /carts/:session_id/products" do
       it "adds item to cart" do
-        post "/carts/#{@session_id}/items", {
+        post "/carts/#{@session_id}/products", {
           product_id: @product.id,
           quantity: 2
         }
@@ -130,7 +130,7 @@ describe "E-commerce API" do
       end
 
       it "returns error for insufficient stock" do
-        post "/carts/#{@session_id}/items", {
+        post "/carts/#{@session_id}/products", {
           product_id: @product.id,
           quantity: 150
         }
