@@ -104,9 +104,9 @@ describe "E-commerce API" do
       @session_id = "test_session_123"
     end
 
-    describe "GET /cart/:session_id" do
+    describe "GET /carts/:session_id" do
       it "returns empty cart for new session" do
-        get "/cart/#{@session_id}"
+        get "/carts/#{@session_id}"
 
         expect(last_response.status).to eq 200
         expect(resp[:session_id]).to eq @session_id
@@ -115,16 +115,13 @@ describe "E-commerce API" do
       end
     end
 
-    describe "POST /cart/:session_id/products" do
+    describe "POST /carts/:session_id/items" do
       it "adds item to cart" do
-        post "/cart/#{@session_id}/products", {
+        post "/carts/#{@session_id}/items", {
           product_id: @product.id,
           quantity: 2
         }
 
-        puts "Response status: #{last_response.status}"
-        puts "Response body: #{last_response.body}"
-        puts "Parsed response: #{resp}"
         
         expect(last_response.status).to eq 200
         expect(resp[:message]).to eq "Item added to cart"
@@ -133,7 +130,7 @@ describe "E-commerce API" do
       end
 
       it "returns error for insufficient stock" do
-        post "/cart/#{@session_id}/products", {
+        post "/carts/#{@session_id}/items", {
           product_id: @product.id,
           quantity: 150
         }

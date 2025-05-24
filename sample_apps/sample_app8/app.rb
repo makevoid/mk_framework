@@ -70,5 +70,5 @@ class EcommerceApp < MK::Application
   register_cors_domain 'http://localhost:3001'
 
 
-  register_nested_resource('carts', 'products')  # Cart uses custom actions instead of nested resources
+  register_nested_resource('carts', 'items')
 end

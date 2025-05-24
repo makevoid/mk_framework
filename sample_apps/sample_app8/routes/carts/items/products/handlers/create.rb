@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class CartProductsCreateHandler < MK::Handler
+class CartsProductsCreateHandler < MK::Handler
   handler do |r|
     {
       message: "Item added to cart",

@@ -171,3 +171,4 @@ bundle exec rspec
 - Stock is validated during cart operations and checkout
 - Orders are created in a transaction to ensure data consistency
 - Products can be soft-deleted by setting `active` to false
+- The route names are always plural, so if you need to implement for example a checkout route do not use `/checkout` in the paths, use `/checkouts`, so the create of `/checkouts` will be `POST /checkouts` - This is typical in rails-like frameworks that use standard CRUD resources.

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class CartShowController < MK::Controller
+class CartsShowController < MK::Controller
   route do |r|
     session_id = r.params.fetch('id')
     

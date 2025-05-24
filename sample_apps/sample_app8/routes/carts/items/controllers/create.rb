@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-class CartProductsCreateController < MK::Controller
+class CartsItemsCreateController < MK::Controller
   route do |r|
-    session_id = r.params.fetch('cart_id')
+    session_id = r.params.fetch('id')
     product_id = r.params.fetch('product_id')
     quantity = (r.params['quantity'] || 1).to_i
     
