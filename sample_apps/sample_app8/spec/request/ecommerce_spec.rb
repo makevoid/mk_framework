@@ -219,14 +219,15 @@ describe "E-commerce API" do
       @cart.add_item(@product, 2)
     end
 
-    describe "POST /checkout" do
+    describe "POST /checkouts" do
       it "creates order and reduces stock" do
         initial_stock = @product.stock
         
-        post '/checkout', {
+        post '/checkouts', {
           session_id: @session_id,
           customer_email: "test@example.com",
-          customer_name: "John Doe"
+          customer_name: "John Doe",
+          shipping_address: "123 Main St"
         }
 
         expect(last_response.status).to eq 201
@@ -246,10 +247,11 @@ describe "E-commerce API" do
       it "returns error for empty cart" do
         empty_cart = Cart.create(session_id: "empty_session")
         
-        post '/checkout', {
+        post '/checkouts', {
           session_id: "empty_session",
           customer_email: "test@example.com",
-          customer_name: "John Doe"
+          customer_name: "John Doe",
+          shipping_address: "123 Main St"
         }
 
         expect(last_response.status).to eq 422
