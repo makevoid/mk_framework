@@ -11,10 +11,6 @@ class ProjectsCreateController < MK::Controller
       owner_id: r.params['owner_id']
     )
     
-    if project.valid?
-      project.save
-    end
-    
     project
   end
 end

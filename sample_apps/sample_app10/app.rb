@@ -84,4 +84,6 @@ require_relative 'models/comment'
 # Create application instance
 class ProjectManagementApp < MK::Application
   # No need to override initialize - the parent class handles everything
+  
+  # FIXME - register routes
 end

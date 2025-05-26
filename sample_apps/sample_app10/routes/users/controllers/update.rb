@@ -5,6 +5,7 @@ class UsersUpdateController < MK::Controller
     user = User[r.params.fetch('id')]
     r.halt(404, { error: "User not found" }) if user.nil?
     
+    # FIXME
     update_params = {}
     update_params[:name] = r.params['name'] if r.params.key?('name')
     update_params[:email] = r.params['email'] if r.params.key?('email')

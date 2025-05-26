@@ -5,7 +5,6 @@ class TasksDeleteController < MK::Controller
     task = Task[r.params.fetch('id')]
     r.halt(404, { error: "Task not found" }) if task.nil?
     
-    task.destroy
     task
   end
 end

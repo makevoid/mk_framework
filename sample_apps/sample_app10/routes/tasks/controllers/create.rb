@@ -18,10 +18,6 @@ class TasksCreateController < MK::Controller
       estimated_hours: r.params['estimated_hours']
     )
     
-    if task.valid?
-      task.save
-    end
-    
     task
   end
 end

@@ -5,6 +5,7 @@ class ProjectsUpdateController < MK::Controller
     project = Project[r.params.fetch('id')]
     r.halt(404, { error: "Project not found" }) if project.nil?
     
+    # FIXME
     project.update(
       name: r.params['name'] || project.name,
       description: r.params.key?('description') ? r.params['description'] : project.description,

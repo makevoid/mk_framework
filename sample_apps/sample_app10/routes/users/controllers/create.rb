@@ -14,10 +14,6 @@ class UsersCreateController < MK::Controller
       user.password = r.params['password']
     end
     
-    if user.valid?
-      user.save
-    end
-    
     user
   end
 end

@@ -5,7 +5,6 @@ class ProjectsDeleteController < MK::Controller
     project = Project[r.params.fetch('id')]
     r.halt(404, { error: "Project not found" }) if project.nil?
     
-    project.destroy
     project
   end
 end

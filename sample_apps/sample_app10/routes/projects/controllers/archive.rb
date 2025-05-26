@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# FIXME
+
 class ProjectsArchiveController < MK::Controller
   route do |r|
     project = Project[r.params.fetch('id')]

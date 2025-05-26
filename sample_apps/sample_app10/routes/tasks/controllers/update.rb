@@ -5,6 +5,7 @@ class TasksUpdateController < MK::Controller
     task = Task[r.params.fetch('id')]
     r.halt(404, { error: "Task not found" }) if task.nil?
     
+    # FIXME
     update_params = {}
     update_params[:title] = r.params['title'] if r.params.key?('title')
     update_params[:description] = r.params['description'] if r.params.key?('description')

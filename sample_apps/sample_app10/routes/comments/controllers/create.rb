@@ -12,10 +12,6 @@ class CommentsCreateController < MK::Controller
       user_id: r.params['user_id']
     )
     
-    if comment.valid?
-      comment.save
-    end
-    
     comment
   end
 end
