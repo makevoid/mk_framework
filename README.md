@@ -342,9 +342,11 @@ RSpec.configure do |config|
 end
 ```
 
-### Testing
+### Testing - Sample Spec Cases
 
-See docs/testing.md
+See docs/testing.md 
+
+https://github.com/makevoid/mk_framework/blob/main/docs/testing.md
 
 ## Key Concepts
 
