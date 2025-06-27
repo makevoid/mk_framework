@@ -328,8 +328,8 @@ MK Framework includes test helpers for RSpec and Rack::Test. Here's how to set u
 require 'rspec'
 require 'rack/test'
 require 'json'
-require_relative '../app'
-require_relative '../../lib_spec/mk_framework_spec_helpers'
+require_relative 'app'
+# require_relative '../../lib_spec/mk_framework_spec_helpers' # TODO: change to gem spec
 
 RSpec.configure do |config|
   config.include Rack::Test::Methods
