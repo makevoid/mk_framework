@@ -1,6 +1,6 @@
 # MK Framework
 
-MK Framework is a lightweight, Ruby-based API framework inspired by Ruby on Rails' MVC pattern. It implements a Model-View-Handler (MVH) architecture for API development, where JSON responses serve as the "view" layer.
+MK Framework is a lightweight, Ruby-based API framework inspired by Ruby on Rails' MVC pattern. It implements an MVC architecture for API development, where JSON responses serve as the "view" layer.
 
 ## Features
 
