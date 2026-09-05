@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
-class CardsIndexHandler < MK::Handler
-  handler do |r|
-    model.map(&:to_hash)
+module SampleApp5
+  class CardsIndexHandler < MK::Handler
+    handler do |r|
+      model.map(&:public_attributes)
+    end
   end
 end

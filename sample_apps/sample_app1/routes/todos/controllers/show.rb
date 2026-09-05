@@ -1,7 +1,11 @@
 # frozen_string_literal: true
 
-class TodosShowController < MK::Controller
-  route do |r|
-    Todo[r.params.fetch('id')]
+require_relative 'base'
+
+module SampleApp1
+  class TodosShowController < TodosController
+    route do |r|
+      find(r)
+    end
   end
 end

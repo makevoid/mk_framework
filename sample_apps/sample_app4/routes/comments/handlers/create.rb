@@ -1,22 +1,10 @@
 # frozen_string_literal: true
 
-class CommentsCreateHandler < MK::Handler
-  handler do |r|
-    success do |r|
+module SampleApp4
+  class CommentsCreateHandler < MK::Handler
+    handler do |r|
       r.response.status = 201
-      {
-        message: "Comment created",
-        comment: model.to_hash,
-      }
-    end
-
-    error do |r|
-      r.response.status = 422
-      {
-        error: "Validation failed",
-        details: model.errors
-      }
+      {message: 'Comment created', comment: model.public_attributes}
     end
   end
-
 end

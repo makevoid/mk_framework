@@ -1,10 +1,9 @@
 # frozen_string_literal: true
 
-class CardsShowHandler < MK::Handler
-  handler do |r|
-    {
-      card: model.fetch(:card).to_hash,
-      comments: model.fetch(:comments).map(&:to_hash)
-    }
+module SampleApp5
+  class CardsShowHandler < MK::Handler
+    handler do |r|
+      {card: model.fetch(:card).public_attributes, comments: model.fetch(:comments).map(&:public_attributes)}
+    end
   end
 end

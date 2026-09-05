@@ -1,23 +1,11 @@
 # frozen_string_literal: true
 
-class CardsCreateController < MK::Controller
-  route do |r|
-    card_params = {}
+require_relative 'base'
 
-    # Optional fields - title is required by model validation
-    card_params[:title] = r.params['title'] if r.params['title']
-    card_params[:description] = r.params['description'] if r.params['description']
-    card_params[:status] = r.params['status'] if r.params['status']
-
-    card = Card.new(card_params)
-
-    unless card.valid?
-      r.halt(422, {
-        error: "Validation failed",
-        details: card.errors
-      }.to_json)
+module SampleApp5
+  class CardsCreateController < CardsController
+    route do |r|
+      persist(Card.new(r.input.permit(title: [String, NilClass], description: [String, NilClass], status: String)))
     end
-
-    card
   end
 end

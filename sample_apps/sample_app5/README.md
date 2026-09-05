@@ -1,314 +1,59 @@
-# Kanban Board API with Cards and Comments
+# Kanban API with nested comments
 
-A RESTful API for managing kanban cards and comments built with the MK Framework, a lightweight Ruby web framework based on Roda.
+A runnable MK Framework sample using the shared library at `../../lib`.
+Its Ruby namespace is `SampleApp5` and its Rack entrypoint is `SampleApp5::App.app`.
+See [the framework README](../../README.md) and [routing guide](../../docs/routing.md).
 
-## Overview
+## Setup and tests
 
-This application demonstrates a clean separation of concerns with a RESTful architecture:
+From this directory:
 
-- **Controllers**: Handle data retrieval and business logic
-- **Handlers**: Format responses and set HTTP status codes
-- **Models**: Define data structure and validation rules
-- **Nested Resources**: Parent-child relationships between resources (cards and comments)
-
-## Features
-
-- Create, read, update and delete kanban cards
-- Move cards between status columns (Todo, In Progress, Done)
-- Add, view, edit and delete comments on cards
-- Nested resource structure (comments belong to cards)
-- Input validation on all resources
-- JSON response formatting
-- SQLite database storage
-- RESTful API design
-- Recursive data serialization
-
-## Installation
-
-```bash
-# Clone the repository
-git clone <repository-url>
-cd sample_app4
-
-# Install dependencies
+```sh
 bundle install
-```
-
-## Development and Testing
-
-IMPORTANT: Always use RSpec for testing and debugging rather than starting the server directly:
-
-```bash
-# Run all tests
+bundle exec rake db:migrate
+bundle exec rake routes
 bundle exec rspec
-
-# Run specific test file
-bundle exec rspec spec/request/cards_spec.rb
 ```
 
-## API Endpoints
+Migrations are explicit; loading the application does not create tables. The default
+SQLite database is inside this directory. `DATABASE_URL`, `DB_POOL_SIZE`, and
+`DB_POOL_TIMEOUT` configure deployment connections. Tests always use private
+in-memory databases, apply migrations there, and never open a development database.
 
-### Cards Endpoints
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/cards` | GET | List all cards |
-| `/cards/:id` | GET | Get a specific card with its comments |
-| `/cards` | POST | Create a new card |
-| `/cards/:id` | POST | Update a card |
-| `/cards/:id/delete` | POST | Delete a card |
+Use the request specs and Rack entrypoint specs for local verification; do not
+start the server directly while developing this sample.
 
-### Comments Endpoints
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/cards/:card_id/comments` | GET | List all comments for a card |
-| `/cards/:card_id/comments` | POST | Create a new comment for a card |
-| `/comments/:id` | GET | Get a specific comment |
-| `/comments/:id` | POST | Update a comment |
-| `/comments/:id/delete` | POST | Delete a comment |
+## Endpoints
 
-### Request/Response Examples
+| Method | Path | Action |
+| --- | --- | --- |
+| GET / HEAD | `/cards` | List |
+| POST | `/cards` | Create |
+| GET / HEAD | `/cards/:id` | Show |
+| PATCH / PUT | `/cards/:id` | Update supplied fields |
+| DELETE | `/cards/:id` | Delete with model hooks |
 
-#### List all cards
+The compatibility routes `POST /cards/:id` and `POST /cards/:id/delete`
+remain available. Lists use `limit` (default 25, max 100) and `offset` (max 10,000).
+JSON bodies must be objects. Only fields declared through `r.input.permit` reach
+models. Validation errors return 422; missing resources return 404.
 
-```
-GET /cards
-```
+Comments support full CRUD under `/cards/:card_id/comments` and
+`/cards/:card_id/comments/:id`. Member queries are scoped through their URL
+parent, including updates and deletes. Child creation uses the URL parent ID even
+when the client supplies a different one. Foreign keys enforce cascading deletion.
 
-Response:
-```json
-[
-  {
-    "id": 1,
-    "title": "Implement Login Form",
-    "description": "Create a login form with email and password fields",
-    "status": "Todo",
-    "created_at": "2023-01-01T12:00:00Z",
-    "updated_at": "2023-01-01T12:00:00Z"
-  },
-  {
-    "id": 2,
-    "title": "Setup Database Schema",
-    "description": "Create initial database schema with users table",
-    "status": "In Progress",
-    "created_at": "2023-01-02T10:00:00Z",
-    "updated_at": "2023-01-02T15:30:00Z"
-  }
-]
-```
+For compatibility, `/comments/:id` exposes show/update/delete with the same standard
+verbs and POST aliases. There is no parentless `/comments` collection. These APIs
+are public examples; add authentication and authorized parent datasets before using
+them for private or multi-tenant data. URL nesting alone is not authorization.
 
-#### Get a specific card with comments
-
-```
-GET /cards/1
-```
-
-Response:
-```json
-{
-  "card": {
-    "id": 1,
-    "title": "Implement Login Form",
-    "description": "Create a login form with email and password fields",
-    "status": "Todo",
-    "created_at": "2023-01-01T12:00:00Z",
-    "updated_at": "2023-01-01T12:00:00Z"
-  },
-  "comments": [
-    {
-      "id": 1,
-      "card_id": 1,
-      "content": "Don't forget to add validation",
-      "author": "Alice",
-      "created_at": "2023-01-01T14:00:00Z",
-      "updated_at": "2023-01-01T14:00:00Z"
-    },
-    {
-      "id": 2,
-      "card_id": 1,
-      "content": "We should add a remember me checkbox",
-      "author": "Bob",
-      "created_at": "2023-01-01T15:30:00Z",
-      "updated_at": "2023-01-01T15:30:00Z"
-    }
-  ]
-}
-```
-
-#### Create a new card
-
-```
-POST /cards
-```
-
-Request body:
-```json
-{
-  "title": "Implement Logout Functionality",
-  "description": "Add a logout button to the navbar",
-  "status": "Todo"
-}
-```
-
-Response:
-```json
-{
-  "message": "Card created",
-  "card": {
-    "id": 3,
-    "title": "Implement Logout Functionality",
-    "description": "Add a logout button to the navbar",
-    "status": "Todo",
-    "created_at": "2023-01-03T09:00:00Z",
-    "updated_at": "2023-01-03T09:00:00Z"
-  }
-}
-```
-
-#### Update a card
-
-```
-POST /cards/1
-```
-
-Request body:
-```json
-{
-  "status": "In Progress"
-}
-```
-
-Response:
-```json
-{
-  "message": "Card updated",
-  "card": {
-    "id": 1,
-    "title": "Implement Login Form",
-    "description": "Create a login form with email and password fields",
-    "status": "In Progress",
-    "created_at": "2023-01-01T12:00:00Z",
-    "updated_at": "2023-01-03T14:00:00Z"
-  }
-}
-```
-
-#### Delete a card
-
-```
-POST /cards/1/delete
-```
-
-Response:
-```json
-{
-  "message": "Card deleted successfully",
-  "card": {
-    "id": 1,
-    "title": "Implement Login Form",
-    "description": "Create a login form with email and password fields",
-    "status": "Todo",
-    "created_at": "2023-01-01T12:00:00Z",
-    "updated_at": "2023-01-01T12:00:00Z"
-  }
-}
-```
+Parent show responses contain a `card` object and a bounded `comments` array.
+The same pagination settings apply to the embedded comments.
 
 ## Architecture
 
-The application follows a structured architecture:
-
-1. **Models**:
-   - `models/card.rb`: Defines the card schema and validation rules
-   - `models/comment.rb`: Defines the comment schema and validation rules with relationship to cards
-
-2. **Controllers**:
-   - `routes/cards/controllers/`: Handle card-related business logic
-   - `routes/comments/controllers/`: Handle comment-related business logic
-
-3. **Handlers**:
-   - `routes/cards/handlers/`: Format card responses and set HTTP status codes
-   - `routes/comments/handlers/`: Format comment responses and set HTTP status codes
-
-4. **Application**:
-   - `app.rb`: Configures the database, sets up the application, and registers nested resources
-   
-5. **Framework Enhancements**:
-   - Nested resource support for parent-child relationships
-   - Recursive model serialization for complex data structures
-
-## Testing
-
-Run the test suite with:
-
-```bash
-bundle exec rspec
-```
-
-## Framework Notes
-
-The MK Framework has some unique conventions:
-
-- DELETE operations use POST to `/:resource/:id/delete` instead of DELETE method
-- UPDATE operations use POST to `/:resource/:id` instead of PUT/PATCH
-- Controllers handle data operations, handlers manage response formatting
-- Nested resources are registered with the application using `register_nested_resource`
-- Complex object hierarchies are automatically serialized recursively
-
-### Comment Examples
-
-#### List comments for a card
-
-```
-GET /cards/1/comments
-```
-
-Response:
-```json
-[
-  {
-    "id": 1,
-    "card_id": 1,
-    "content": "Don't forget to add validation",
-    "author": "Alice",
-    "created_at": "2023-01-01T14:00:00Z",
-    "updated_at": "2023-01-01T14:00:00Z"
-  },
-  {
-    "id": 2,
-    "card_id": 1,
-    "content": "We should add a remember me checkbox",
-    "author": "Bob",
-    "created_at": "2023-01-01T15:30:00Z",
-    "updated_at": "2023-01-01T15:30:00Z"
-  }
-]
-```
-
-#### Create a comment on a card
-
-```
-POST /cards/1/comments
-```
-
-Request body:
-```json
-{
-  "content": "Should we include a password strength indicator?",
-  "author": "Charlie"
-}
-```
-
-Response:
-```json
-{
-  "message": "Comment created",
-  "comment": {
-    "id": 3,
-    "card_id": 1,
-    "content": "Should we include a password strength indicator?",
-    "author": "Charlie",
-    "created_at": "2023-01-03T09:00:00Z",
-    "updated_at": "2023-01-03T09:00:00Z"
-  }
-}
-```
+Controllers validate input, scope queries, and explicitly persist records. Handlers
+format JSON with an explicit field list and do not save or delete. Models use Sequel;
+CRUD samples maintain timestamps through its timestamps plugin. Request specs also
+boot through the real `config.ru` from a different working directory.

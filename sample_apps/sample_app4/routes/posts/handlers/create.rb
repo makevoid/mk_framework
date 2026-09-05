@@ -1,21 +1,10 @@
 # frozen_string_literal: true
 
-class PostsCreateHandler < MK::Handler
-  handler do |r|
-    success do |r|
+module SampleApp4
+  class PostsCreateHandler < MK::Handler
+    handler do |r|
       r.response.status = 201
-      {
-        message: "Post created",
-        post: model.to_hash,
-      }
-    end
-
-    error do |r|
-      r.response.status = 422
-      {
-        error: "Validation failed",
-        details: model.errors
-      }
+      {message: 'Post created', post: model.public_attributes}
     end
   end
 end

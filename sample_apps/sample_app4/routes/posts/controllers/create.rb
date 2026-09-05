@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
-class PostsCreateController < MK::Controller
-  route do |r|
-    Post.new(
-      title: r.params['title'],
-      description: r.params['description']
-    )
+require_relative 'base'
+
+module SampleApp4
+  class PostsCreateController < PostsController
+    route do |r|
+      persist(Post.new(r.input.permit(title: [String, NilClass], description: [String, NilClass])))
+    end
   end
 end

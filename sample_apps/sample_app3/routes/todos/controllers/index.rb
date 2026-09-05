@@ -1,7 +1,11 @@
 # frozen_string_literal: true
 
-class TodosIndexController < MK::Controller
-  route do |r|
-    Todo.all
+require_relative 'base'
+
+module SampleApp3
+  class TodosIndexController < TodosController
+    route do |r|
+      paginate(dataset(r), r)
+    end
   end
 end

@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-class TodosIndexHandler < MK::Handler
-  route do |r|
-    # TODO: change model to resource in index route
-  
-    model.map(&:to_hash)
+module SampleApp1
+  class TodosIndexHandler < MK::Handler
+    handler do |r|
+      model.map(&:public_attributes)
+    end
   end
 end

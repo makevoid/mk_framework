@@ -1,7 +1,11 @@
 # frozen_string_literal: true
 
-class PostsIndexController < MK::Controller
-  route do |r|
-    Post.all
+require_relative 'base'
+
+module SampleApp4
+  class PostsIndexController < PostsController
+    route do |r|
+      paginate(dataset(r), r)
+    end
   end
 end

@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-class PostsDeleteController < MK::Controller
-  route do |r|
-    post = Post[r.params.fetch('id')]
+require_relative 'base'
 
-    r.halt(404, { error: "Post not found" }) if post.nil?
-
-    post
+module SampleApp4
+  class PostsDeleteController < PostsController
+    route do |r|
+      destroy(find(r))
+    end
   end
 end

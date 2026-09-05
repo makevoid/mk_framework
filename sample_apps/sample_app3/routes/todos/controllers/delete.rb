@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-class TodosDeleteController < MK::Controller
-  route do |r|
-    todo = Todo[r.params.fetch('id')]
+require_relative 'base'
 
-    r.halt(404, { message: "todo not found" }) if todo.nil?
-
-    todo
+module SampleApp3
+  class TodosDeleteController < TodosController
+    route do |r|
+      destroy(find(r))
+    end
   end
 end

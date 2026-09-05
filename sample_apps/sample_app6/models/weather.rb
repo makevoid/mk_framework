@@ -1,11 +1,13 @@
 # frozen_string_literal: true
 
-class Weather < Sequel::Model
-  plugin :validation_helpers
+module SampleApp6
+  class Weather < Sequel::Model(DB[:weathers])
+    plugin :validation_helpers
 
-  def validate
-    super
-    validates_presence [:location]
-    validates_max_length 100, :location
+    def validate
+      super
+      validates_presence [:location, :data, :fetched_at]
+      validates_max_length 100, :location
+    end
   end
 end

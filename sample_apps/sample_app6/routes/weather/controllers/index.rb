@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
-class WeatherIndexController < MK::Controller
-  route do |r|
-    Weather.all
+module SampleApp6
+  class WeatherIndexController < Controller
+    route do |r|
+      paginate(Weather.dataset, r)
+    end
   end
 end

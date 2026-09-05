@@ -1,1 +1,11 @@
 .DS_Store
+.bundle/
+vendor/
+pkg/
+coverage/
+*.db
+*.db-*
+*.sqlite*
+log/
+tmp/
+.env

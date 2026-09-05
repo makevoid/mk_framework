@@ -1,20 +1,9 @@
 # frozen_string_literal: true
 
-class TodosUpdateHandler < MK::Handler
-  handler do |r|
-    success do |r|
-      {
-        message: "Todo updated",
-        todo: model.to_hash,
-      }
-    end
-
-    error do |r|
-      r.response.status = 400
-      {
-        error: "Validation failed!",
-        details: model.errors
-      }
+module SampleApp2
+  class TodosUpdateHandler < MK::Handler
+    handler do |r|
+      {message: 'Todo updated', todo: model.public_attributes}
     end
   end
 end

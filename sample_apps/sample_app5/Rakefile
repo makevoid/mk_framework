@@ -1,9 +1,4 @@
-task :run do
-  sh "bundle exec rackup -p 3000"
-end
+# frozen_string_literal: true
 
-task :spec do
-  sh "bundle exec rspec"
-end
-
-task default: :run
+require_relative '../support/tasks'
+SampleTasks.install(__dir__)

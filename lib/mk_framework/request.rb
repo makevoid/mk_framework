@@ -10,7 +10,13 @@ module MK
     def call(env)
       env['mk.request_id'] = SecureRandom.uuid
       if (input = env['rack.input'])
-        body = input.read(@settings[:max_body_bytes] + 1)
+        body = +''
+        while body.bytesize <= @settings[:max_body_bytes]
+          chunk = input.read(@settings[:max_body_bytes] + 1 - body.bytesize)
+          break if chunk.nil? || chunk.empty?
+
+          body << chunk
+        end
         if body.bytesize > @settings[:max_body_bytes]
           json = JSON.generate(error: 'Request body too large', request_id: env['mk.request_id'])
           return [413, {'content-type' => 'application/json', 'content-length' => json.bytesize.to_s,
@@ -75,6 +81,8 @@ module MK
         input_params = super
         env['mk.input_params'] = input_params
         input_params.merge(path_params.transform_keys(&:to_s))
+      rescue Rack::QueryParser::ParameterTypeError, Rack::QueryParser::InvalidParameterError, Rack::QueryParser::ParamsTooDeepError
+        raise BadRequest, 'Invalid request parameters'
       end
 
       def input

@@ -1,21 +1,10 @@
 # frozen_string_literal: true
 
-class CardsCreateHandler < MK::Handler
-  handler do |r|
-    success do |r|
+module SampleApp5
+  class CardsCreateHandler < MK::Handler
+    handler do |r|
       r.response.status = 201
-      {
-        message: "Card created",
-        card: model.to_hash,
-      }
-    end
-
-    error do |r|
-      r.response.status = 422
-      {
-        error: "Validation failed",
-        details: model.errors
-      }
+      {message: 'Card created', card: model.public_attributes}
     end
   end
 end

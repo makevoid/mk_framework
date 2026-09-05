@@ -1,14 +1,20 @@
 # frozen_string_literal: true
 
-class Comment < Sequel::Model
-  plugin :validation_helpers
-  
-  many_to_one :post
-  
-  def validate
-    super
-    validates_presence [:content, :post_id]
-    validates_max_length 1000, :content
-    validates_max_length 100, :author if author
+module SampleApp4
+  class Comment < Sequel::Model(DB[:comments])
+    plugin :validation_helpers
+    plugin :timestamps, update_on_create: true
+    many_to_one :post, class: 'SampleApp4::Post'
+
+    def validate
+      super
+      validates_presence [:content, :post_id]
+      validates_max_length 1000, :content
+      validates_max_length 100, :author if author
+    end
+
+    def public_attributes
+      values.slice(:id, :post_id, :content, :author, :created_at, :updated_at)
+    end
   end
 end

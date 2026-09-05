@@ -1,16 +1,12 @@
 # frozen_string_literal: true
 
-class PostsShowController < MK::Controller
-  route do |r|
-    post = Post[r.params.fetch('id')]
+require_relative 'base'
 
-    r.halt 404, { error: "Post not found" } unless post
-
-    comments = Comment.where(post_id: post.id).all
-
-    {
-      post: post,
-      comments: comments
-    }
+module SampleApp4
+  class PostsShowController < PostsController
+    route do |r|
+      record = find(r)
+      {post: record, comments: paginate(record.comments_dataset, r)}
+    end
   end
 end

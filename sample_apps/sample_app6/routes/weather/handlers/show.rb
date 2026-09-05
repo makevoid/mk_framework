@@ -1,35 +1,20 @@
 # frozen_string_literal: true
 
-class WeatherShowHandler < MK::Handler
-  handler do |r|
-    raw_data = JSON.parse(model.data)
+require 'time'
 
-    # Format the weather data to be more useful
-    hourly_forecast = raw_data['list'].take(24) # Get forecast for next 24 hours
-
-    formatted_data = hourly_forecast.map do |hour|
-      {
-        time: Time.at(hour['dt']).strftime('%Y-%m-%d %H:%M:%S'),
-        temperature: hour['main']['temp'],
-        feels_like: hour['main']['feels_like'],
-        humidity: hour['main']['humidity'],
-        weather: {
-          main: hour['weather'][0]['main'],
-          description: hour['weather'][0]['description'],
-          icon: hour['weather'][0]['icon']
-        },
-        wind: {
-          speed: hour['wind']['speed'],
-          direction: hour['wind']['deg']
-        }
-      }
+module SampleApp6
+  class WeatherShowHandler < MK::Handler
+    handler do |_r|
+      forecast = JSON.parse(model.data).fetch('list').first(8).map do |period|
+        {time: Time.at(period.fetch('dt')).utc.iso8601,
+         temperature: period.fetch('main').fetch('temp'),
+         feels_like: period.fetch('main').fetch('feels_like'),
+         humidity: period.fetch('main').fetch('humidity'),
+         weather: period.fetch('weather').first.slice('main', 'description', 'icon'),
+         wind: {speed: period.fetch('wind').fetch('speed'), direction: period.fetch('wind').fetch('deg')}}
+      end
+      {location: model.location, forecast: forecast,
+       fetched_at: model.fetched_at.iso8601, cache_expires_at: (model.fetched_at + 3600).iso8601}
     end
-
-    {
-      location: model.location,
-      hourly_forecast: formatted_data,
-      fetched_at: model.fetched_at.strftime('%Y-%m-%d %H:%M:%S'),
-      cache_expires_at: (model.fetched_at + 3600).strftime('%Y-%m-%d %H:%M:%S')
-    }
   end
 end

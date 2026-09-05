@@ -1,27 +1,12 @@
 # frozen_string_literal: true
 
-class CommentsCreateController < MK::Controller
-  route do |r|
-    card_id = r.params.fetch('card_id')
-    card = Card[card_id]
+require_relative 'base'
 
-    r.halt(404, { error: "Card not found" }.to_json) unless card
-
-    comment_params = { card_id: card_id }
-
-    # Optional fields - content is required by model validation
-    comment_params[:content] = r.params['content'] if r.params['content']
-    comment_params[:author] = r.params['author'] if r.params['author']
-
-    comment = Comment.new(comment_params)
-
-    unless comment.valid?
-      r.halt(422, {
-        error: "Validation failed",
-        details: comment.errors
-      }.to_json)
+module SampleApp5
+  class CommentsCreateController < CommentsController
+    route do |r|
+      dataset(r) # Validate the URL parent before creating a child.
+      persist(Comment.new(r.input.permit(content: [String, NilClass], author: [String, NilClass]).merge(card_id: r.path_params.fetch(:card_id))))
     end
-
-    comment
   end
 end

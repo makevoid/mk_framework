@@ -1,12 +1,11 @@
 # frozen_string_literal: true
 
-class CardsDeleteController < MK::Controller
-  route do |r|
-    id = r.params.fetch('id')
-    card = Card[id]
+require_relative 'base'
 
-    r.halt(404, { error: "Card not found" }.to_json) unless card
-
-    card
+module SampleApp5
+  class CardsDeleteController < CardsController
+    route do |r|
+      destroy(find(r))
+    end
   end
 end

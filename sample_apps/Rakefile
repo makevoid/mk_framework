@@ -1,17 +1,10 @@
-DIRS = %w(sample_app2 sample_app3 sample_app4 sample_app5 sample_app6)
+# frozen_string_literal: true
 
-def run_tests
-  DIRS.each do |dir|
-    puts "-" * 80
-    puts "Running tests for #{dir}..."
-    puts "-" * 80
-    system("cd ./#{dir} && bundle exec rake spec")
-  end
-end
+require_relative 'support/test_runner'
 
-desc 'Run tests for all sample apps'
+desc 'Run all sample suites and fail if any suite fails'
 task :test do
-  run_tests
+  SampleTestRunner.run(Dir[File.join(__dir__, 'sample_app[1-6]')].sort)
 end
 
 task default: :test

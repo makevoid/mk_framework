@@ -1,19 +1,21 @@
 # frozen_string_literal: true
 
-class Card < Sequel::Model
-  plugin :validation_helpers
-  
-  one_to_many :comments, :on_delete => :cascade
-  
-  def validate
-    super
-    validates_presence [:title]
-    validates_max_length 100, :title
-    validates_includes ['Todo', 'In Progress', 'Done'], :status if status
-  end
-  
-  def before_destroy
-    Comment.where(card_id: id).delete
-    super
+module SampleApp5
+  class Card < Sequel::Model(DB[:cards])
+    plugin :validation_helpers
+    plugin :defaults_setter
+    plugin :timestamps, update_on_create: true
+    one_to_many :comments, class: 'SampleApp5::Comment'
+
+    def validate
+      super
+      validates_presence [:title]
+      validates_max_length 100, :title
+      validates_includes ['Todo', 'In Progress', 'Done'], :status
+    end
+
+    def public_attributes
+      values.slice(:id, :title, :description, :status, :created_at, :updated_at)
+    end
   end
 end

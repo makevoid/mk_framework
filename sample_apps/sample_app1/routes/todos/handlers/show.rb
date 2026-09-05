@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
-class TodosShowHandler < MK::Handler
-  route do |r|
-    model.to_hash
+module SampleApp1
+  class TodosShowHandler < MK::Handler
+    handler do |r|
+      model.public_attributes
+    end
   end
 end

@@ -1,38 +1,23 @@
 # frozen_string_literal: true
 
-require 'sequel'
-require 'json'
-require 'roda'
-require 'net/http'
-require 'uri'
-require 'date'
-require_relative '../../lib/mk_framework'
-
-# Set up database connection
-DB = Sequel.connect('sqlite://weather.db')
-
-# Create weather table if it doesn't exist
-DB.create_table? :weathers do
-  primary_key :id
-  String :location, null: false
-  String :data, text: true
-  DateTime :fetched_at, default: Sequel::CURRENT_TIMESTAMP
-  index :location, unique: true
-end
-
-# Require models
+require_relative '../../lib/mk_framework/sequel'
+require_relative 'database'
 require_relative 'models/weather'
 
-# Create application instance
-class WeatherApp < MK::Application
-  # Helper method to read API key from file
-  def self.api_key
-    @api_key ||= begin
-      path = File.expand_path('~/.openweathermaps_api_key')
-      File.read(path).strip
-    rescue Errno::ENOENT
-      puts "ERROR: OpenWeatherMap API key file not found at #{path}"
-      nil
+module SampleApp6
+  class Controller < MK::Controller
+    include MK::Persistence
+  end
+
+  class App < MK::Application
+    def self.api_key = ENV['OPENWEATHERMAP_API_KEY']
+
+    configure root: ROOT, namespace: SampleApp6
+
+    resource_routes do
+      resources :weather, only: %i[index show], param: :location
     end
   end
+
+  App.boot!
 end

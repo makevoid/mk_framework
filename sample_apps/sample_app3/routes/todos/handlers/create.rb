@@ -1,22 +1,10 @@
 # frozen_string_literal: true
 
-class TodosCreateHandler < MK::Handler
-  handler do |r|
-    success do |r|
+module SampleApp3
+  class TodosCreateHandler < MK::Handler
+    handler do |r|
       r.response.status = 201
-      {
-        message: "Todo created",
-        todo: model.to_hash,
-        custom_field: "Custom value for create"
-      }
-    end
-
-    error do |r|
-      r.response.status = 422
-      {
-        error: "Validation failed",
-        details: model.errors
-      }
+      {message: 'Todo created', todo: model.public_attributes, custom_field: 'Custom value for create'}
     end
   end
 end

@@ -1,16 +1,13 @@
 # frozen_string_literal: true
 
-class PostsUpdateController < MK::Controller
-  route do |r|
-    post = Post[r.params.fetch('id')]
+require_relative 'base'
 
-    r.halt(404, { error: "Post not found" }) if post.nil?
-
-    params = r.params
-
-    post.title = params['title'] if params.key?('title')
-    post.description = params['description'] if params.key?('description')
-
-    post
+module SampleApp4
+  class PostsUpdateController < PostsController
+    route do |r|
+      record = find(r)
+      record.set(r.input.permit(title: [String, NilClass], description: [String, NilClass]))
+      persist(record)
+    end
   end
 end

@@ -1,21 +1,27 @@
 # MK Framework Guidelines
 
 ## Commands
-- Run server: `cd sample_apps/sample_app1 && bundle exec rackup`
-- Install dependencies: `bundle install`
-- Run tests: `bundle exec rspec`
-- Run single test: `bundle exec rspec spec/path/to/file_spec.rb:LINE_NUMBER`
-- Linting: `bundle exec rubocop`
+- Install the root bundle: `bundle install`
+- Run framework and all sample suites: `bundle exec rake`
+- Run framework specs: `bundle exec rspec spec`
+- Run a sample suite from its directory: `bundle exec rspec`
+- Apply a sample's migrations: `bundle exec rake db:migrate`
+- Inspect a sample's compiled routes: `bundle exec rake routes`
+- Build the gem: `bundle exec rake build`
 
-## Code Style
-- Include `# frozen_string_literal: true` at the top of each Ruby file
-- Follow Ruby naming conventions: snake_case for methods/variables, CamelCase for classes
-- RESTful architecture pattern with controller/handler separation
-- Controllers handle data retrieval and business logic
-- Handlers handle response formatting and HTTP status
-- Models use Sequel::Model with validation_helpers plugin
-- Error handling: use r.halt for interrupting execution, handlers for formatting errors
-- Resource routing follows RESTful convention (index, show, create, update, delete)
-- Dynamic model accessors automatically generate getters/setters for model attributes
-- Prefer explicit requires over autoloading
-- Keep methods small and focused on a single responsibility
+## Design and style
+- Include `# frozen_string_literal: true` in Ruby files.
+- Use small Ruby blocks and explicit requires; keep classes in an application module.
+- Configure an absolute root and namespace, then call `App.boot!` after defining the app.
+- Controllers own data access, authorization, persistence, and transaction boundaries.
+- Handlers format responses and statuses; they never implicitly save or delete models.
+- Use `handler do |r|` for response blocks and `route do |r|` for controllers.
+- Return Hash/Array values; use `r.halt` for explicit early HTTP responses. Do not call `to_json` in handlers.
+- Require `mk_framework/sequel` and include `MK::Persistence` for explicit persistence helpers.
+- Use `r.path_params` for URL identifiers and `r.input` for allowlisted typed body/query fields.
+- Scope nested member lookups and writes through the authorized parent.
+- Use Sequel migrations and private test databases. Never create tables during server boot.
+- Test real PATCH/PUT/DELETE behavior and retained POST compatibility routes.
+- Add meaningful regression tests for changed behavior and propagate child test failures.
+- Use the README and docs for the current API; `success`/`error` persistence blocks and
+  `register_nested_resource` belong to the old prototype and are no longer supported.

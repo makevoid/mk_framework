@@ -1,7 +1,11 @@
 # frozen_string_literal: true
 
-class CommentsShowController < MK::Controller
-  route do |r|
-    Comment[r.params.fetch('id')]
+require_relative 'base'
+
+module SampleApp4
+  class CommentsShowController < CommentsController
+    route do |r|
+      find(r)
+    end
   end
 end

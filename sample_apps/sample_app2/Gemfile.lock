@@ -1,3 +1,12 @@
+PATH
+  remote: ../..
+  specs:
+    mk_framework (0.1.0)
+      json (>= 2.12, < 3)
+      logger (>= 1.6, < 2)
+      rack (>= 3.2.7, < 4)
+      roda (>= 3.92, < 4)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -34,23 +43,25 @@ GEM
       bigdecimal
     sqlite3 (2.9.6)
       mini_portile2 (~> 2.8.0)
+    sqlite3 (2.9.6-aarch64-linux-gnu)
     sqlite3 (2.9.6-arm64-darwin)
+    sqlite3 (2.9.6-x86_64-linux-gnu)
 
 PLATFORMS
+  aarch64-linux
   arm64-darwin-24
   ruby
+  x86_64-linux
 
 DEPENDENCIES
-  json
-  logger
-  puma
-  rack-test
-  rackup
-  rake
-  roda
-  rspec
-  sequel
-  sqlite3
+  mk_framework!
+  puma (~> 8.0)
+  rack-test (~> 2.2)
+  rackup (~> 2.3)
+  rake (~> 13.4)
+  rspec (~> 3.13)
+  sequel (>= 5.92, < 6)
+  sqlite3 (~> 2.9)
 
 BUNDLED WITH
   4.0.20

@@ -10,7 +10,7 @@ module MK
       record.save || raise(ValidationError.new(details: record.errors))
     rescue Sequel::ValidationFailed => error
       raise ValidationError.new(details: error.model.errors)
-    rescue Sequel::UniqueConstraintViolation
+    rescue Sequel::UniqueConstraintViolation, Sequel::ForeignKeyConstraintViolation, Sequel::HookFailed
       raise Conflict
     end
 

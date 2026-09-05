@@ -1,220 +1,93 @@
 # frozen_string_literal: true
 
-require 'spec_helper'
+require_relative '../spec_helper'
 
-describe "Weather API" do
-  before(:all) do
-    # Make sure we have an API key for testing
-    WeatherApp.api_key
-  end
-
-  describe "GET /weather/:location" do
-    context "when API key is missing" do
-      before do
-        allow(WeatherApp).to receive(:api_key).and_return(nil)
-      end
-
-      it "returns an error" do
-        get "/weather/London"
-        expect(last_response.status).to eq 500
-        expect(resp[:error]).to eq "API key not found"
-      end
-
-      after do
-        # Reset the mock
-        allow(WeatherApp).to receive(:api_key).and_call_original
-      end
-    end
-
-    context "with successful API response mocked" do
-      before do
-        # Clean the database 
-        DB[:weathers].delete
-
-        # Create mock data
-        @weather = Weather.create(
-          location: "London",
-          data: mock_weather_data,
-          fetched_at: Time.now
-        )
-      end
-
-      it "returns weather data for the location" do
-        get "/weather/London"
-
-        expect(last_response.status).to eq 200
-        expect(resp[:location]).to eq "London"
-        expect(resp[:hourly_forecast]).to be_an(Array)
-        expect(resp[:hourly_forecast].length).to be <= 24
-        expect(resp[:hourly_forecast][0]).to have_key(:temperature)
-        expect(resp[:hourly_forecast][0]).to have_key(:weather)
-        expect(resp[:cache_expires_at]).to be_a(String)
-      end
-
-      it "returns cached data if available and fresh" do
-        first_time = Time.now
-        get "/weather/London"
-        
-        # The fetched_at should be the same as we're using cached data
-        first_timestamp = resp[:fetched_at]
-        
-        # Make another request - should still use cache
-        sleep(1)
-        get "/weather/London"
-        second_timestamp = resp[:fetched_at]
-        
-        expect(first_timestamp).to eq(second_timestamp)
-      end
-    end
-
-    context "with cache expired", :vcr do
-      before do
-        # Clean the database 
-        DB[:weathers].delete
-
-        # Create mock data with expired cache (more than an hour ago)
-        @weather = Weather.create(
-          location: "Paris",
-          data: mock_weather_data,
-          fetched_at: Time.now - 3601 # Just over an hour ago
-        )
-      end
-
-      it "fetches new data when cache is expired", vcr: { cassette_name: "openweathermap/paris_forecast" } do
-        original_fetched_at = @weather.fetched_at
-        
-        get "/weather/Paris"
-        
-        # Should have updated the timestamp
-        expect(last_response.status).to eq 200
-        fetched_time = DateTime.parse(resp[:fetched_at])
-        original_time = original_fetched_at.to_datetime
-        
-        # The new timestamp should be more recent
-        expect(fetched_time).to be > original_time
-      end
-    end
-    
-    context "with a new location", :vcr do
-      before do
-        # Clean the database to ensure the location doesn't exist
-        DB[:weathers].delete
-      end
-      
-      it "fetches data for a new location", vcr: { cassette_name: "openweathermap/tokyo_forecast" } do
-        get "/weather/Tokyo"
-        
-        # Debug output to see what's happening
-        puts "Response status: #{last_response.status}"
-        puts "Response body: #{last_response.body}"
-        
-        expect(last_response.status).to eq 200
-        expect(resp[:location]).to eq "Tokyo"
-        expect(resp[:hourly_forecast]).to be_an(Array)
-        expect(resp[:hourly_forecast].length).to be <= 24
-        expect(resp[:hourly_forecast][0]).to have_key(:temperature)
-        expect(resp[:hourly_forecast][0]).to have_key(:weather)
-      end
-    end
-    
-    context "with invalid location", :vcr do
-      it "returns an error when location doesn't exist", vcr: { cassette_name: "openweathermap/invalid_location" } do
-        get "/weather/NonExistentCity123456"
-        
-        expect(last_response.status).not_to eq 200
-        expect(resp).to have_key(:error)
-      end
-    end
-  end
-
-  describe "GET /weather" do
+module SampleApp6
+  RSpec.describe 'Weather API' do
     before do
-      # Clean the database 
-      DB[:weathers].delete
-
-      # Create sample data
-      @london = Weather.create(
-        location: "London",
-        data: mock_weather_data,
-        fetched_at: Time.now
-      )
-      
-      @new_york = Weather.create(
-        location: "New York",
-        data: mock_weather_data,
-        fetched_at: Time.now - 2000 # Still within the hour
-      )
+      Weather.dataset.delete
+      @period = {dt: 1_800_000_000, main: {temp: 15, feels_like: 14, humidity: 76},
+                 weather: [{main: 'Clear', description: 'clear sky', icon: '01d'}],
+                 wind: {speed: 2.5, deg: 100}}
+      @data = JSON.generate(list: Array.new(10) { |i| @period.merge(dt: @period[:dt] + i * 10_800) })
+      @url = 'https://api.openweathermap.org/data/2.5/forecast'
     end
 
-    it "returns all known locations" do
-      get "/weather"
-      
-      expect(last_response.status).to eq 200
-      expect(resp.length).to eq 2
-      
-      locations = resp.map { |w| w[:location] }
-      expect(locations).to include("London")
-      expect(locations).to include("New York")
-      
-      # All should indicate they're still cached
-      cache_status = resp.map { |w| w[:is_cached] }
-      expect(cache_status).to all(be true)
+    def upstream(location)
+      stub_request(:get, @url).with(query: {q: location, appid: 'test-weather-key', units: 'metric'})
     end
-  end
-  
-  # Helper method to generate mock weather data
-  def mock_weather_data
-    {
-      "cod" => "200",
-      "message" => 0,
-      "cnt" => 24,
-      "list" => 24.times.map do |i|
-        {
-          "dt" => Time.now.to_i + (i * 3600),
-          "main" => {
-            "temp" => 15.0 + rand(-5..5),
-            "feels_like" => 14.0 + rand(-5..5),
-            "temp_min" => 12.0,
-            "temp_max" => 18.0,
-            "pressure" => 1012,
-            "humidity" => 76
-          },
-          "weather" => [
-            {
-              "id" => 800,
-              "main" => "Clear",
-              "description" => "clear sky",
-              "icon" => "01d"
-            }
-          ],
-          "clouds" => {
-            "all" => 0
-          },
-          "wind" => {
-            "speed" => 2.68,
-            "deg" => 167
-          },
-          "visibility" => 10000,
-          "pop" => 0,
-          "sys" => {
-            "pod" => "d"
-          },
-          "dt_txt" => (Time.now + (i * 3600)).strftime("%Y-%m-%d %H:%M:%S")
-        }
-      end,
-      "city" => {
-        "id" => 2643743,
-        "name" => "London",
-        "coord" => {
-          "lat" => 51.5085,
-          "lon" => -0.1257
-        },
-        "country" => "GB",
-        "population" => 1000000,
-        "timezone" => 3600,
-        "sunrise" => 1650600000,
-        "sunset" => 1650650000
-      }
-    }.to_json
+
+    it 'reports a missing API key without reading a personal key file' do
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with('OPENWEATHERMAP_API_KEY').and_return(nil)
+      get '/weather/London'
+      expect(last_response.status).to eq(503)
+      expect(resp[:error]).to eq('Weather service is not configured')
+    end
+
+    it 'fetches a new location and returns eight three-hour periods' do
+      request = upstream('London').to_return(status: 200, body: @data)
+      get '/weather/London'
+      expect(last_response.status).to eq(200)
+      expect(resp[:forecast].length).to eq(8)
+      expect(resp[:forecast][0][:temperature]).to eq(15)
+      expect(Time.iso8601(resp[:forecast][1][:time]) - Time.iso8601(resp[:forecast][0][:time])).to eq(10_800)
+      expect(request).to have_been_requested.once
+    end
+
+    it 'serves fresh cache entries without network requests' do
+      Weather.create(location: 'London', data: @data, fetched_at: Time.now)
+      get '/weather/London'
+      timestamp = resp[:fetched_at]
+      get '/weather/London'
+      expect(last_response.status).to eq(200)
+      expect(resp[:fetched_at]).to eq(timestamp)
+      expect(a_request(:get, @url)).not_to have_been_made
+    end
+
+    it 'refreshes an expired cache entry without inserting a duplicate' do
+      weather = Weather.create(location: 'Paris', data: @data, fetched_at: Time.now - 3601)
+      upstream('Paris').to_return(status: 200, body: @data)
+      get '/weather/Paris'
+      expect(last_response.status).to eq(200)
+      expect(Weather.count).to eq(1)
+      expect(weather.refresh.fetched_at).to be > Time.now - 10
+    end
+
+    it 'maps an unknown location to 404' do
+      upstream('Unknown').to_return(status: 404, body: 'upstream private detail')
+      get '/weather/Unknown'
+      expect(last_response.status).to eq(404)
+      expect(last_response.body).not_to include('private detail')
+    end
+
+    it 'maps timeouts to a sanitized 502' do
+      upstream('London').to_timeout
+      get '/weather/London'
+      expect(last_response.status).to eq(502)
+      expect(last_response.body).not_to include('test-weather-key')
+    end
+
+    it 'maps invalid upstream JSON to a sanitized 502' do
+      upstream('London').to_return(status: 200, body: 'not json')
+      get '/weather/London'
+      expect(last_response.status).to eq(502)
+    end
+
+    it 'does not cache structurally invalid upstream data' do
+      upstream('London').to_return(status: 200, body: '{"list":[{}]}')
+      get '/weather/London'
+      expect(last_response.status).to eq(502)
+      expect(Weather.count).to eq(0)
+    end
+
+    it 'lists cached locations with pagination' do
+      Weather.create(location: 'London', data: @data, fetched_at: Time.now)
+      Weather.create(location: 'Paris', data: @data, fetched_at: Time.now)
+      get '/weather', limit: 1
+      expect(last_response.status).to eq(200)
+      expect(resp.length).to eq(1)
+      expect(resp.first[:is_cached]).to eq(true)
+    end
   end
 end
