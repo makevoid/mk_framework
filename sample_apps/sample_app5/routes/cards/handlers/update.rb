@@ -3,7 +3,7 @@
 module SampleApp5
   class CardsUpdateHandler < MK::Handler
     handler do |r|
-      {message: 'Card updated', card: model.public_attributes}
+      {message: 'Card updated', card: model.slice(*Card.public_attributes_list)}
     end
   end
 end

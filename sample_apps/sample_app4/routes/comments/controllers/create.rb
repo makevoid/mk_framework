@@ -1,12 +1,13 @@
 # frozen_string_literal: true
 
-require_relative 'base'
-
 module SampleApp4
-  class CommentsCreateController < CommentsController
+  class CommentsCreateController < Controller
     route do |r|
-      dataset(r) # Validate the URL parent before creating a child.
-      persist(Comment.new(r.input.permit(content: [String, NilClass], author: [String, NilClass]).merge(post_id: r.path_params.fetch(:post_id))))
+      post = Post[r.path_params.fetch(:post_id)]
+      raise MK::NotFound, 'Post not found' unless post
+
+      attributes = r.input.permit(content: [String, NilClass], author: [String, NilClass])
+      Comment.new(attributes.merge(post_id: post.id))
     end
   end
 end

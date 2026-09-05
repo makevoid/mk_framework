@@ -3,7 +3,7 @@
 module SampleApp4
   class CommentsIndexHandler < MK::Handler
     handler do |r|
-      model.map(&:public_attributes)
+      model.map { |comment| comment.slice(*Comment.public_attributes_list) }
     end
   end
 end

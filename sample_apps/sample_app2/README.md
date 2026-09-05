@@ -40,7 +40,9 @@ models. Validation errors return 422; missing resources return 404.
 
 ## Architecture
 
-Controllers validate input, scope queries, and explicitly persist records. Handlers
-format JSON with an explicit field list and do not save or delete. Models use Sequel;
+Controllers validate input, scope queries, and return prepared records. Framework
+dispatch saves create/update results, destroys delete results with hooks, and
+converts records and collections to raw hashes/arrays. Handlers filter and format
+that data without querying or writing to the database. Models use Sequel;
 CRUD samples maintain timestamps through its timestamps plugin. Request specs also
 boot through the real `config.ru` from a different working directory.

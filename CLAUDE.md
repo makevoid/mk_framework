@@ -13,11 +13,12 @@
 - Include `# frozen_string_literal: true` in Ruby files.
 - Use small Ruby blocks and explicit requires; keep classes in an application module.
 - Configure an absolute root and namespace, then call `App.boot!` after defining the app.
-- Controllers own data access, authorization, persistence, and transaction boundaries.
-- Handlers format responses and statuses; they never implicitly save or delete models.
+- Controllers own data access, authorization, attribute assignment, and explicit multi-record transactions.
+- Return a Sequel model from standard create/update/delete actions: framework dispatch calls save/save/destroy once, then converts it to raw attributes. Show/index results are only materialized.
+- Handlers receive raw hashes and arrays, filter fields, and format responses/statuses; they never query, save, delete, or load associations.
 - Use `handler do |r|` for response blocks and `route do |r|` for controllers.
-- Return Hash/Array values; use `r.halt` for explicit early HTTP responses. Do not call `to_json` in handlers.
-- Require `mk_framework/sequel` and include `MK::Persistence` for explicit persistence helpers.
+- Handlers return Hash/Array values; use `r.halt` for explicit early HTTP responses. Do not call `to_json` in handlers.
+- Require `mk_framework/sequel` for automatic action persistence and raw data conversion. Include `MK::Persistence` only for pagination or explicit transactions; after explicit writes return raw data to avoid a second lifecycle write.
 - Use `r.path_params` for URL identifiers and `r.input` for allowlisted typed body/query fields.
 - Scope nested member lookups and writes through the authorized parent.
 - Use Sequel migrations and private test databases. Never create tables during server boot.

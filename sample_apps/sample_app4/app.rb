@@ -7,7 +7,6 @@ require_relative 'models/comment'
 
 module SampleApp4
   class Controller < MK::Controller
-    include MK::Persistence
   end
 
   class App < MK::Application

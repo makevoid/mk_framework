@@ -5,7 +5,7 @@ require_relative 'base'
 module SampleApp2
   class TodosDeleteController < TodosController
     route do |r|
-      destroy(find(r))
+      find(r)
     end
   end
 end

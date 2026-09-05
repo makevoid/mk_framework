@@ -7,7 +7,7 @@ module SampleApp3
     route do |r|
       record = find(r)
       record.set(r.input.permit(title: [String, NilClass], description: [String, NilClass], completed: :boolean))
-      persist(record)
+      record
     end
   end
 end

@@ -129,11 +129,19 @@ module MK
       value = endpoint[:controller].new.execute(request)
       raise NotFound, "#{endpoint[:label]} not found" if value.nil?
 
+      value = prepare_result(value, action: endpoint[:action])
       result = endpoint[:handler].new(value).execute(request)
       unless result.is_a?(Hash) || result.is_a?(Array)
         raise ConfigurationError, 'Handlers must return a Hash or Array, or halt with an explicit response'
       end
       result
+    end
+
+    private
+
+    # The optional Sequel integration supplies the record lifecycle here.
+    def prepare_result(value, action:)
+      value
     end
   end
 end

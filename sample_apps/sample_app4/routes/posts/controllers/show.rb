@@ -1,12 +1,14 @@
 # frozen_string_literal: true
 
-require_relative 'base'
-
 module SampleApp4
-  class PostsShowController < PostsController
+  class PostsShowController < Controller
     route do |r|
-      record = find(r)
-      {post: record, comments: paginate(record.comments_dataset, r)}
+      post = Post[r.path_params.fetch(:id)]
+      raise MK::NotFound, 'Post not found' unless post
+
+      page = r.page
+      comments = post.comments_dataset.order(:id).limit(page[:limit], page[:offset]).all
+      {post: post, comments: comments}
     end
   end
 end

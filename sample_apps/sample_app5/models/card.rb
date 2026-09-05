@@ -14,8 +14,8 @@ module SampleApp5
       validates_includes ['Todo', 'In Progress', 'Done'], :status
     end
 
-    def public_attributes
-      values.slice(:id, :title, :description, :status, :created_at, :updated_at)
+    def self.public_attributes_list
+      [:id, :title, :description, :status, :created_at, :updated_at]
     end
   end
 end

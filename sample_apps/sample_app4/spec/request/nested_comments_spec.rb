@@ -67,6 +67,57 @@ module SampleApp4
       expect { Comment.create(post_id: @parent.id, content: 'Orphan') }.to raise_error(Sequel::ForeignKeyConstraintViolation)
     end
 
+    it 'returns 422 and leaves the stored comment unchanged when an update is invalid' do
+      patch nested, content: ''
+
+      expect(last_response.status).to eq(422)
+      expect(resp[:details]).to have_key(:content)
+      expect(@comment.refresh.content).to eq('Original')
+    end
+
+    it 'returns 409 and preserves the post when a destroy hook rejects deletion' do
+      allow_any_instance_of(Post).to receive(:before_destroy) { raise Sequel::HookFailed, 'Private reason' }
+
+      delete "/posts/#{@parent.id}"
+
+      expect(last_response.status).to eq(409)
+      expect(resp[:error]).to eq('Resource could not be deleted')
+      expect(Post[@parent.id]).not_to be_nil
+      expect(Comment[@comment.id]).not_to be_nil
+    end
+
+    it 'returns 409 for a conflicting write without exposing database details' do
+      allow_any_instance_of(Comment).to receive(:save).and_raise(Sequel::ForeignKeyConstraintViolation, 'Private SQL')
+
+      expect { post "/posts/#{@parent.id}/comments", content: 'Reply' }.not_to change(Comment, :count)
+      expect(last_response.status).to eq(409)
+      expect(resp[:error]).to eq('Conflict')
+      expect(last_response.body).not_to include('Private SQL')
+    end
+
+    it 'returns a sanitized 500 for an unexpected database failure' do
+      allow_any_instance_of(Comment).to receive(:save).and_raise(Sequel::DatabaseError, 'Private SQL')
+
+      patch nested, content: 'Changed'
+
+      expect(last_response.status).to eq(500)
+      expect(resp[:error]).to eq('Server error')
+      expect(last_response.body).not_to include('Private SQL')
+      expect(@comment.refresh.content).to eq('Original')
+    end
+
+    it 'reports a missing URL parent for member reads and writes' do
+      path = "/posts/999999/comments/#{@comment.id}"
+      get path
+      expect(last_response.status).to eq(404)
+      expect(resp[:error]).to eq('Post not found')
+      patch path, content: 'Changed'
+      expect(last_response.status).to eq(404)
+      delete path
+      expect(last_response.status).to eq(404)
+      expect(@comment.refresh.content).to eq('Original')
+    end
+
     it 'updates timestamps and limits nested collections' do
       old = Time.now - 3600
       @comment.update(updated_at: old)

@@ -12,8 +12,8 @@ module SampleApp4
       validates_max_length 100, :title
     end
 
-    def public_attributes
-      values.slice(:id, :title, :description, :created_at, :updated_at)
+    def self.public_attributes_list
+      %i[id title description created_at updated_at]
     end
   end
 end

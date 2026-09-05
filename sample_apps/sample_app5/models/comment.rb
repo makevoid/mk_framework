@@ -13,8 +13,8 @@ module SampleApp5
       validates_max_length 100, :author if author
     end
 
-    def public_attributes
-      values.slice(:id, :card_id, :content, :author, :created_at, :updated_at)
+    def self.public_attributes_list
+      [:id, :card_id, :content, :author, :created_at, :updated_at]
     end
   end
 end

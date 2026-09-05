@@ -34,6 +34,61 @@ module SampleApp4
         expect(resp[1][:id]).to eq @post2.id
         expect(resp[1][:title]).to eq "Second Post"
         expect(resp[1][:description]).to eq "This is the second test blog post"
+        expect(resp).to all(satisfy { |post| !post.key?(:comments) })
+      end
+
+      it 'includes comments only when requested, with empty arrays for posts without comments' do
+        comment = Comment.create(post_id: @post1.id, content: 'A reply', author: 'Alice')
+
+        get '/posts', comments: '1'
+
+        expect(last_response.status).to eq(200)
+        expect(resp[0][:comments]).to contain_exactly(
+          id: comment.id, post_id: @post1.id, content: 'A reply', author: 'Alice',
+          created_at: comment.created_at.to_s, updated_at: comment.updated_at.to_s
+        )
+        expect(resp[1][:comments]).to eq([])
+
+        get '/posts', comments: '0'
+        expect(resp).to all(satisfy { |post| !post.key?(:comments) })
+      end
+
+      it 'paginates posts while including all comments belonging to the selected posts' do
+        Comment.create(post_id: @post1.id, content: 'Excluded post')
+        comments = 2.times.map { |i| Comment.create(post_id: @post2.id, content: "Reply #{i}") }
+
+        get '/posts', comments: '1', limit: '1', offset: '1'
+
+        expect(last_response.status).to eq(200)
+        expect(resp.map { |post| post[:id] }).to eq([@post2.id])
+        expect(resp[0][:comments].map { |comment| comment[:id] }).to match_array(comments.map(&:id))
+      end
+
+      it 'loads the posts and their comments in two queries' do
+        [@post1, @post2].each { |post| Comment.create(post_id: post.id, content: 'Reply') }
+        sql = StringIO.new
+        logger = Logger.new(sql)
+        DB.loggers << logger
+
+        get '/posts', comments: '1'
+
+        expect(last_response.status).to eq(200)
+        expect(sql.string.lines.grep(/SELECT /).length).to eq(2)
+      ensure
+        DB.loggers.delete(logger)
+      end
+
+      it 'returns an empty list when no posts match the page' do
+        get '/posts', comments: '1', offset: '2'
+
+        expect(last_response.status).to eq(200)
+        expect(resp).to eq([])
+      end
+
+      it 'rejects invalid pagination when including comments' do
+        get '/posts', comments: '1', limit: '0'
+
+        expect(last_response.status).to eq(400)
       end
     end
 

@@ -20,17 +20,17 @@ The samples now expose `SampleApp1::App` through `SampleApp6::App` instead of gl
 `TodoApp`, `BlogApp`, `KanbanApp`, and `WeatherApp` classes. Their model datasets are
 explicit, so multiple sample apps can coexist without sharing constants or data.
 
-## Explicit writes
+## Automatic action persistence and raw handler data
 
 Previously, handlers interpreted class-name suffixes and saved/deleted the object
 returned by a controller. Remove handler `success`/`error` registration blocks.
-Move persistence into the controller and return the completed result:
+Controllers return the prepared record; framework dispatch persists it according
+to the registered action and converts it to raw attributes before the handler:
 
 ```ruby
 # Controller
-include MK::Persistence
 route do |r|
-  persist Post.new(r.input.permit(title: String))
+  Post.new(r.input.permit(title: String))
 end
 
 # Handler
@@ -40,14 +40,23 @@ handler do |r|
 end
 ```
 
-Require `mk_framework/sequel` for `MK::Persistence`. Sequel is optional and must be
-listed in your application's Gemfile. Use `destroy(record)` for deletion with
-hooks. A handler does not write under any action name. Validation uses 422 for
+Require `mk_framework/sequel` for this lifecycle. Sequel is optional and must be
+listed in your application's Gemfile. Create/update results receive `save` then
+`values`; delete results receive `destroy` then `values`; show/index results are
+converted without writes. Remove explicit `persist`, `save`, and `destroy` calls
+from standard controllers to avoid duplicate writes. For explicit multi-record
+transactions, return raw data after completing the writes. Custom actions do not
+automatically persist records.
+
+Handlers receive raw hashes/arrays, including materialized nested results. Replace
+model attribute/association methods with hash access and allowlist filtering.
+Select associations in controllers. A handler does not query or write under any
+action name. Validation uses 422 for
 both create and update; expected constraint conflicts use 409. Unexpected failures
 are sanitized 500s. Deliberate `MK::Error` messages are public.
 
 The old `route` declaration in a handler remains an alias for `handler`, but it
-does not restore implicit persistence. Handlers return Hash/Array responses rather
+does not move persistence into handlers. Handlers return Hash/Array responses rather
 than calling `to_json`. For an empty success, use `r.halt(204)` in the handler.
 
 ## Resource declarations

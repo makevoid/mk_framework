@@ -5,7 +5,7 @@ require_relative 'base'
 module SampleApp2
   class TodosCreateController < TodosController
     route do |r|
-      persist(Todo.new(r.input.permit(title: [String, NilClass], description: [String, NilClass], completed: :boolean)))
+      Todo.new(r.input.permit(title: [String, NilClass], description: [String, NilClass], completed: :boolean))
     end
   end
 end

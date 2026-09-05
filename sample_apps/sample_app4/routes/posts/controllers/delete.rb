@@ -1,11 +1,12 @@
 # frozen_string_literal: true
 
-require_relative 'base'
-
 module SampleApp4
-  class PostsDeleteController < PostsController
+  class PostsDeleteController < Controller
     route do |r|
-      destroy(find(r))
+      post = Post[r.path_params.fetch(:id)]
+      raise MK::NotFound, 'Post not found' unless post
+
+      post
     end
   end
 end

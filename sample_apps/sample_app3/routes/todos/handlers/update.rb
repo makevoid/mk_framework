@@ -3,7 +3,7 @@
 module SampleApp3
   class TodosUpdateHandler < MK::Handler
     handler do |r|
-      {message: 'Todo updated', todo: model.public_attributes}
+      {message: 'Todo updated', todo: model.slice(*Todo.public_attributes_list)}
     end
   end
 end

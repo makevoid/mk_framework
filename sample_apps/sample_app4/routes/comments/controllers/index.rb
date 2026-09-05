@@ -1,11 +1,13 @@
 # frozen_string_literal: true
 
-require_relative 'base'
-
 module SampleApp4
-  class CommentsIndexController < CommentsController
+  class CommentsIndexController < Controller
     route do |r|
-      paginate(dataset(r), r)
+      post = Post[r.path_params.fetch(:post_id)]
+      raise MK::NotFound, 'Post not found' unless post
+
+      page = r.page
+      post.comments_dataset.order(:id).limit(page[:limit], page[:offset]).all
     end
   end
 end

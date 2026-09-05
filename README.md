@@ -12,8 +12,9 @@ routes/posts/controllers/create.rb
 routes/posts/handlers/create.rb
 ```
 
-Controllers do application work. Handlers format responses. The router connects
-them. Writes, transactions, authorization, and response fields remain explicit Ruby.
+Controllers select and prepare records. Framework dispatch persists standard action
+results and converts them to raw data. Handlers filter fields and format responses.
+Authorization, association selection, and multi-record transactions remain explicit Ruby.
 You can read the core in `lib/mk_framework/`; no ORM or database is loaded until you
 require `mk_framework/sequel`.
 
@@ -79,7 +80,7 @@ By convention, `posts/create` connects `Blog::PostsCreateController` to
 standard action files under `routes/*/controllers`; explicit declarations are
 recommended for APIs with nested or custom routes. Missing handlers fail at boot.
 
-## Controllers write; handlers respond
+## Controllers prepare; the framework persists; handlers respond
 
 These action files assume your application has explicitly required its `Post`
 model, backed by a migrated Sequel dataset, before calling `boot!`.
@@ -89,10 +90,8 @@ require 'mk_framework/sequel'
 
 module Blog
   class PostsCreateController < MK::Controller
-    include MK::Persistence
-
     route do |r|
-      persist Post.new(r.input.permit(title: String, description: [String, NilClass]))
+      Post.new(r.input.permit(title: String, description: [String, NilClass]))
     end
   end
 
@@ -105,14 +104,37 @@ module Blog
 end
 ```
 
-`persist` saves once and translates model validation to 422 and constraint conflicts
-to 409. `destroy(record)` invokes Sequel destroy hooks. Database failures reach the
-application's sanitized 500 handler. These helpers are optional; controllers can
-call ordinary Ruby services. Use `DB.transaction` around related writes.
+Requiring `mk_framework/sequel` enables this lifecycle for a controller's returned
+Sequel model, using the registered route action:
 
-Handlers can receive any controller result. They return a Hash or Array, or use
+| Action | Before the handler |
+| --- | --- |
+| create | `save`, then `values` |
+| update | `save`, then `values` |
+| delete | `destroy` with hooks, then `values` |
+| show | `values` |
+| index | Materialize the collection and convert records to `values` |
+
+Create controllers return `Post.new(...)`; updates find a record and call `set(...)`;
+deletes return the record to delete. Do not save or destroy these results manually.
+PATCH/PUT and POST compatibility aliases share the same lifecycle. Custom action
+names do not automatically write, regardless of their controller class name.
+Validation failures return 422; expected constraint/hook conflicts return 409;
+unexpected database failures reach the sanitized 500 handler.
+
+Records and datasets nested in hashes/arrays are recursively converted to raw data,
+without recursively saving or deleting them. Controllers explicitly select any
+associations to include; conversion does not load associations implicitly. Handlers
+receive hashes and arrays, filter them with `fields` or `slice` and a model's
+`public_attributes_list`, and never query the database.
+
+Plain hash/array results remain usable for service-backed actions. For related
+writes, use `DB.transaction` and explicit saves (or `MK::Persistence` helpers), then
+return raw data so the framework does not save a completed write again.
+
+Handlers return a Hash or Array, or use
 `r.halt` for an explicit response such as 204. Returning `nil` from a controller
-means the resource was not found. There is no class-name-based persistence behavior.
+means the resource was not found.
 Inside action blocks, use `next` for an early result; Ruby's `return` would try to
 return from the context where the block was originally defined.
 

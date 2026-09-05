@@ -3,7 +3,10 @@
 module SampleApp4
   class PostsShowHandler < MK::Handler
     handler do |r|
-      {post: model.fetch(:post).public_attributes, comments: model.fetch(:comments).map(&:public_attributes)}
+      {
+        post: model.fetch(:post).slice(*Post.public_attributes_list),
+        comments: model.fetch(:comments).map { |comment| comment.slice(*Comment.public_attributes_list) }
+      }
     end
   end
 end

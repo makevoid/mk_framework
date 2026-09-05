@@ -150,7 +150,7 @@ DB.transaction do
   validated_comment_attributes.each do |attributes|
     persist(Comment.new(attributes.merge(project_id: project.id)))
   end
-  project
+  project.values # Already saved: return raw data to skip automatic action persistence.
 end
 ```
 

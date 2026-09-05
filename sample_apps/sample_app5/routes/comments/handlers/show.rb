@@ -3,7 +3,7 @@
 module SampleApp5
   class CommentsShowHandler < MK::Handler
     handler do |r|
-      model.public_attributes
+      model.slice(*Comment.public_attributes_list)
     end
   end
 end

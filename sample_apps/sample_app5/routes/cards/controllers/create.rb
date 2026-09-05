@@ -5,7 +5,7 @@ require_relative 'base'
 module SampleApp5
   class CardsCreateController < CardsController
     route do |r|
-      persist(Card.new(r.input.permit(title: [String, NilClass], description: [String, NilClass], status: String)))
+      Card.new(r.input.permit(title: [String, NilClass], description: [String, NilClass], status: String))
     end
   end
 end

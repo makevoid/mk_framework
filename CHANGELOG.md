@@ -7,8 +7,9 @@
   shallow routes, namespaces, custom actions, action allowlists, configurable IDs,
   route inspection, HEAD, PATCH, PUT, DELETE, and 405/Allow responses.
 - Preserve POST update/delete URLs as configurable compatibility aliases.
-- Move database writes out of response handlers into explicit Sequel helpers.
-  Save once, invoke destroy hooks, and permit application-owned transactions.
+- Persist returned Sequel records by registered action before response handlers:
+  create/update save once, delete invokes destroy hooks, show/index materialize data.
+  Handlers receive raw hashes/arrays; explicit multi-record transactions remain available.
 - Add typed input allowlists, bounded pagination and request bodies, request IDs,
   resilient JSON errors, recursive parameter redaction, and request hooks.
 - Scope and namespace the sample applications. Add migrations, test-only databases,
