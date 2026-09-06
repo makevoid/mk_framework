@@ -24,7 +24,7 @@ From this checkout:
 
 ```sh
 bundle install
-bundle exec rake                 # Framework tests and all six sample suites
+bundle exec rake                 # Framework tests and all seven sample suites
 cd sample_apps/sample_app4
 bundle exec rake db:migrate      # Explicit schema setup; never done on server boot
 bundle exec rake routes
@@ -43,6 +43,7 @@ stub HTTP and require no personal API key or internet connection.
 | [4](sample_apps/sample_app4/README.md) | Blog posts, nested comments, parent scoping |
 | [5](sample_apps/sample_app5/README.md) | Kanban cards, status validation, nested comments |
 | [6](sample_apps/sample_app6/README.md) | Weather client, deadlines, atomic cache refresh |
+| [7](sample_apps/sample_app7/README.md) | Three-column Kanban board, ordering, priorities, filters, archive and comments |
 
 ## An application
 

@@ -8,7 +8,7 @@ RSpec::Core::RakeTask.new(:spec)
 
 desc 'Test every sample app in a separate process with its own bundle'
 task :samples do
-  SampleTestRunner.run(Dir[File.join(__dir__, 'sample_apps/sample_app[1-6]')].sort)
+  SampleTestRunner.run(Dir[File.join(__dir__, 'sample_apps/sample_app[0-9]*')].sort)
 end
 
 desc 'Build the release gem in pkg/'
