@@ -8,25 +8,31 @@ RSpec.describe 'Kanban migrations' do
 
   after { database.disconnect }
 
-  it 'upgrades existing cards with per-column positions while retaining comments' do
-    Sequel::Migrator.run(database, migrations, target: 1)
+  it 'creates the complete schema and leaves existing data intact on repeated migration' do
+    Sequel::Migrator.run(database, migrations)
     now = Time.now
-    ids = ['Todo', 'Done', 'Todo'].map do |status|
-      database[:cards].insert(title: status, status: status, created_at: now, updated_at: now)
-    end
-    comment_id = database[:comments].insert(card_id: ids.first, content: 'Keep this', created_at: now, updated_at: now)
+    card_id = database[:cards].insert(title: 'Task', created_at: now, updated_at: now)
+    comment_id = database[:comments].insert(card_id: card_id, content: 'Keep this', created_at: now, updated_at: now)
+    expect(database[:cards][id: card_id]).to include(
+      status: 'Todo', position: 0, priority: 'normal', archived: false,
+      assignee: nil, due_date: nil
+    )
+    expect(database.indexes(:cards).values.map { |index| index[:columns] }).
+      to contain_exactly([:archived, :status, :position], [:assignee], [:due_date])
     Sequel::Migrator.run(database, migrations)
-    expect(database[:cards].order(:id).select_map(:position)).to eq([0, 0, 1])
-    expect(database[:cards].select_map(:priority)).to eq(%w[normal normal normal])
-    expect(database[:cards].select_map(:archived)).to eq([false, false, false])
-    expect(database[:comments][id: comment_id][:card_id]).to eq(ids.first)
-    Sequel::Migrator.run(database, migrations)
-    expect(database[:cards].count).to eq(3)
-    Sequel::Migrator.run(database, migrations, target: 1)
-    expect(database[:cards].columns).not_to include(:position)
+    expect(database[:cards].count).to eq(1)
+    expect(database[:comments][id: comment_id][:card_id]).to eq(card_id)
     expect(database[:comments][id: comment_id][:content]).to eq('Keep this')
+  end
+
+  it 'rolls back the entire schema and can migrate again' do
     Sequel::Migrator.run(database, migrations)
-    expect(database[:cards].order(:id).select_map(:position)).to eq([0, 0, 1])
+    Sequel::Migrator.run(database, migrations, target: 0)
+    expect(database.table_exists?(:cards)).to be(false)
+    expect(database.table_exists?(:comments)).to be(false)
+    Sequel::Migrator.run(database, migrations)
+    expect(database[:cards].columns).to include(:position, :priority, :assignee, :due_date, :archived)
+    expect(database.table_exists?(:comments)).to be(true)
   end
 
   it 'enforces column, priority and position constraints in the database' do

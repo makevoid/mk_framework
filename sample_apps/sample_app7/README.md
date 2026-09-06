@@ -26,9 +26,9 @@ Run every sample suite with `bundle exec rake` from `sample_apps`.
 Use the request and Rack entrypoint specs for development verification; do not
 start the server directly during development.
 
-Migrations are explicit; booting the app never creates tables. Migration 002
-also upgrades existing cards from the original schema, assigning positions by
-ID within each column. Tests migrate private in-memory databases and never open
+Migrations are explicit; booting the app never creates tables. The single
+`001_initial.rb` migration creates the complete card and comment schema, including
+board fields, indexes and constraints. Tests migrate private in-memory databases and never open
 the development database. `DATABASE_URL`, `DB_POOL_SIZE`, and `DB_POOL_TIMEOUT`
 configure connections; the default is SQLite inside this sample directory.
 
