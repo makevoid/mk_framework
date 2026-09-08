@@ -7,7 +7,7 @@ Gem::Specification.new do |spec|
   spec.version = MK::VERSION
   spec.authors = ['Francesco Canessa']
   spec.summary = 'Small, explicit JSON APIs on Roda'
-  spec.homepage = 'https://github.com/makevoid/mk_framework2'
+  spec.homepage = 'https://github.com/makevoid/mk_framework'
   spec.description = 'Resource routing, controllers, and response handlers with optional Sequel persistence.'
   spec.license = 'MIT'
   spec.required_ruby_version = '>= 3.2'
