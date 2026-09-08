@@ -44,12 +44,12 @@ RSpec.describe 'Generated applications' do
       expect(execute('-S', 'rake', 'routes', environment: environment, directory: app)).to include('POST   /posts')
       code = <<~CODE
         require 'rack/builder'
-        require 'rack/mock'
+        require 'rack/test'
         require 'json'
         app = Rack::Builder.parse_file(#{File.join(app, 'config.ru').inspect})
-        client = Rack::MockRequest.new(app)
+        client = Rack::Test::Session.new(app)
         attributes = JSON.parse(#{JSON.generate(config.example).inspect})
-        response = client.post('/posts', input: JSON.generate(attributes), 'CONTENT_TYPE' => 'application/json')
+        response = client.post('/posts', JSON.generate(attributes), 'CONTENT_TYPE' => 'application/json')
         abort response.body unless response.status == 201
         row = GeneratedBlog::Post.first
         raise row.inspect unless row.title == 'Example' && row.contents == 'Example text' && row.quantity == 1 && row.price == 1.5 && row.published == false
@@ -57,7 +57,7 @@ RSpec.describe 'Generated applications' do
         raise unless GeneratedBlog::App.router.endpoints.length == 6
         raise unless client.get('/posts').status == 200
         %w[starts_on scheduled_at].each do |field|
-          response = client.post('/posts', input: JSON.generate(attributes.merge(field => 'not-a-date')), 'CONTENT_TYPE' => 'application/json')
+          response = client.post('/posts', JSON.generate(attributes.merge(field => 'not-a-date')), 'CONTENT_TYPE' => 'application/json')
           raise response.body unless response.status == 400 && GeneratedBlog::Post.count == 1
         end
         GeneratedBlog::DB.disconnect

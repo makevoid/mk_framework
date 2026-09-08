@@ -20,6 +20,7 @@
 - Use `r.path_params` for URL identifiers and `r.input` for allowlisted typed body/query fields.
 - Scope nested member lookups and writes through the authorized parent.
 - Use Sequel migrations and private test databases. Never create tables during server boot.
+- Use `rack/test` and `Rack::Test::Methods` for generated request specs.
 - Test real PATCH/PUT/DELETE behavior and retained POST compatibility routes.
 - Add meaningful regression tests for changed behavior and propagate child test failures.
 - Use the README and docs for the current API; `success`/`error` persistence blocks and
