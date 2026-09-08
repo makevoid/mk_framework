@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.1 — 2026-09-08
 
 - Add `mk_frame_init` with interactive prompts and a non-interactive `--cli`
   definition for generating a self-contained app, model, create controller/handler,

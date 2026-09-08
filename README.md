@@ -21,14 +21,14 @@ require `mk_framework/sequel`.
 ## Install
 
 ```sh
-gem install mk_framework -v 0.2.0
+gem install mk_framework -v 0.2.1
 ```
 
 Or add it to your application's Gemfile:
 
 ```ruby
 source 'https://rubygems.org'
-gem 'mk_framework', '~> 0.2.0'
+gem 'mk_framework', '~> 0.2.1'
 ```
 
 Run `bundle install`. Add `sequel` and your database driver if you use
@@ -36,23 +36,16 @@ Run `bundle install`. Add `sequel` and your database driver if you use
 
 ## Generate an app with `mk_frame_init`
 
-The generator is new in this source tree; the published **0.2.0** gem does not
-include it yet. Until the next release, install a local build from this checkout:
+Version 0.2.1 includes the `mk_frame_init` executable. Install the gem, then run
+it from the parent directory where you want your new app:
 
 ```sh
-bundle install
-bundle exec rake build
-gem install ./pkg/mk_framework-0.2.0.gem
-```
-
-Once a release containing the generator is published, the installation is simply
-`gem install mk_framework`. After either installation, RubyGems puts
-`mk_frame_init` in Ruby's executable directory. Run it from the parent directory
-where you want your new app:
-
-```sh
+gem install mk_framework -v 0.2.1
 mk_frame_init
 ```
+
+RubyGems puts `mk_frame_init` in Ruby's executable directory. Inside a bundle that
+includes MK, you can also run `bundle exec mk_frame_init`.
 
 The interactive CLI asks, in order:
 
@@ -633,7 +626,7 @@ bundle exec rake
 bundle exec rake build
 ```
 
-The gem is written to `pkg/mk_framework-0.2.0.gem`. See
+The gem is written to `pkg/mk_framework-0.2.1.gem`. See
 [deployment](docs/deployment.md) for migrations, connections, authentication,
 timeouts, logging, and release verification, and [upgrading](docs/upgrading.md)
 for changes from the prototype. CI covers Ruby 3.2, 3.3, 3.4, and 4.0 on Linux.
