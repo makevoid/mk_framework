@@ -1,0 +1,25 @@
+# frozen_string_literal: true
+
+require 'rake'
+require 'rbconfig'
+
+namespace :db do
+  desc 'Apply database migrations explicitly'
+  task :migrate do
+    require_relative 'database'
+    Sequel::Migrator.run(<%= config.namespace %>::DB, File.join(__dir__, 'db/migrations'))
+  end
+end
+
+desc 'Print the compiled resource routes'
+task :routes do
+  require_relative 'app'
+  puts <%= config.namespace %>::App.route_table
+end
+
+desc 'Run isolated request specs'
+task :spec do
+  sh RbConfig.ruby, '-S', 'rspec', File.join(__dir__, 'spec')
+end
+
+task default: :spec

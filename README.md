@@ -34,6 +34,111 @@ gem 'mk_framework', '~> 0.2.0'
 Run `bundle install`. Add `sequel` and your database driver if you use
 `mk_framework/sequel`; both are optional application dependencies.
 
+## Generate an app with `mk_frame_init`
+
+The generator is new in this source tree; the published **0.2.0** gem does not
+include it yet. Until the next release, install a local build from this checkout:
+
+```sh
+bundle install
+bundle exec rake build
+gem install ./pkg/mk_framework-0.2.0.gem
+```
+
+Once a release containing the generator is published, the installation is simply
+`gem install mk_framework`. After either installation, RubyGems puts
+`mk_frame_init` in Ruby's executable directory. Run it from the parent directory
+where you want your new app:
+
+```sh
+mk_frame_init
+```
+
+The interactive CLI asks, in order:
+
+1. App name, such as `blog` (Ruby namespace `Blog`).
+2. Singular model name, such as `post` (`Blog::Post`).
+3. Resource/table name, defaulting to `posts`.
+4. Each field name and its type, selected by menu number or type name. Leave the
+   next field name blank to finish.
+5. Confirmation of the app, model, fields, route, and destination.
+
+Use lowercase names with underscores. The supported types are `string`, `text`,
+`integer`, `float`, `boolean`, `date`, and `datetime`. At least one field is required;
+all selected fields are required. MK generates `id`, `created_at`, and `updated_at`
+automatically. Date/time inputs use ISO 8601 strings, and numeric inputs use JSON
+numbers. Invalid field types return 400; missing required fields or blank text
+return 422.
+
+For scripts and automation, supply the whole definition in a quoted `--cli`
+argument. This mode never prompts or asks for confirmation:
+
+```sh
+mk_frame_init --cli 'app_name:blog, model_name:posts, fields:[title:string, contents:text, published:boolean]'
+```
+
+This creates `./blog`, a `Blog::Post` model backed by `posts`, and a single
+`POST /posts` create route with one controller and one handler. Inline
+`model_name` accepts a singular or conventional plural name (`post` or `posts`).
+For a custom table/URL name, add `resource_name:articles`. Names are simple Ruby
+identifiers; the inline format is parsed as data, never evaluated as Ruby.
+
+An optional destination overrides the default app directory. Its parent must
+already exist, and the generator refuses existing destinations, including empty
+directories. Invalid input exits with status 1; successful generation exits with 0.
+No dependencies are installed and no database is opened during generation.
+
+```sh
+mk_frame_init ./blog_api --cli 'app_name:blog, model_name:posts, fields:[title:string, contents:text]'
+mk_frame_init --help
+```
+
+After generation:
+
+```sh
+cd blog_api
+bundle install
+bundle exec rake db:migrate
+bundle exec rake routes
+bundle exec rspec
+```
+
+The result is self-contained:
+
+```text
+blog_api/
+├── Gemfile
+├── Rakefile
+├── .gitignore
+├── README.md
+├── database.rb
+├── app.rb
+├── config.ru
+├── db/migrations/001_initial.rb
+├── models/post.rb
+├── routes/posts/controllers/create.rb
+├── routes/posts/handlers/create.rb
+├── spec/spec_helper.rb
+└── spec/request/posts_spec.rb
+```
+
+`database.rb` connects to a local SQLite file, or `DATABASE_URL`. Migrations are
+explicit and run before models load. Tests always migrate a private in-memory
+database. The controller permits the chosen fields and returns `Post.new(...)`;
+MK saves once, then the handler returns `{post: ...}` with status 201. The generated
+README includes a local server command, an example request, and extension guidance.
+
+The framework checkout also exposes the same generator as a Rake task:
+
+```sh
+bundle exec rake mk_framework:init DESTINATION=./blog_api
+bundle exec rake mk_framework:init DESTINATION=./blog_api \
+  APP_SPEC='app_name:blog, model_name:posts, fields:[title:string, contents:text]'
+```
+
+These are alternative invocations; choose one for a new destination. To expose the
+task in another project's Rakefile, add `require 'mk_framework/generator/tasks'`.
+
 ## Try the examples
 
 The seven sample applications live in
@@ -82,46 +187,45 @@ parent scoping checks the relationship, while user access rules belong in your a
 
 ### Directory structure
 
-The sample shares database and Rake helpers with the other apps in its repository.
-Keep the `support/` directory when running it from a checkout. This tree lists the
-six action files explained below; the sample also includes the remaining CRUD
+Each sample carries its own namespaced database and Rake helpers in `support/`,
+so you can copy `sample_app4/` alone to start a separate project. This tree lists
+the six action files explained below; the sample also includes the remaining CRUD
 controllers and handlers for both resources.
 
 ```text
-mk_framework_sample_apps/
+sample_app4/
 ├── support/
-│   ├── database.rb              # Connections and explicit migration helper
-│   └── tasks.rb                 # db:migrate, routes, and spec tasks
-└── sample_app4/
-    ├── Gemfile
-    ├── Rakefile
-    ├── database.rb              # SampleApp4::ROOT and SampleApp4::DB
-    ├── app.rb                   # Requires, namespace, routes, and boot!
-    ├── config.ru                # Rack entrypoint
-    ├── db/migrations/
-    │   └── 001_initial.rb       # posts, comments, indexes, and foreign key
-    ├── models/
-    │   ├── post.rb
-    │   └── comment.rb
-    ├── routes/
-    │   ├── posts/
-    │   │   ├── controllers/
-    │   │   │   ├── create.rb
-    │   │   │   └── index.rb
-    │   │   └── handlers/
-    │   │       ├── create.rb
-    │   │       └── index.rb
-    │   └── comments/
-    │       ├── controllers/update.rb
-    │       └── handlers/update.rb
-    └── spec/
-        ├── spec_helper.rb
-        ├── boot_spec.rb
-        └── request/
-            ├── posts_spec.rb
-            ├── comments_spec.rb
-            ├── nested_comments_spec.rb
-            └── handler_boundary_spec.rb
+│   ├── database.rb              # SampleApp4::Database: connections and migrations
+│   └── tasks.rb                 # SampleApp4::Tasks: db:migrate, routes, and specs
+├── Gemfile
+├── Rakefile
+├── database.rb              # SampleApp4::ROOT and SampleApp4::DB
+├── app.rb                   # Requires, namespace, routes, and boot!
+├── config.ru                # Rack entrypoint
+├── db/migrations/
+│   └── 001_initial.rb       # posts, comments, indexes, and foreign key
+├── models/
+│   ├── post.rb
+│   └── comment.rb
+├── routes/
+│   ├── posts/
+│   │   ├── controllers/
+│   │   │   ├── create.rb
+│   │   │   └── index.rb
+│   │   └── handlers/
+│   │       ├── create.rb
+│   │       └── index.rb
+│   └── comments/
+│       ├── controllers/update.rb
+│       └── handlers/update.rb
+└── spec/
+    ├── spec_helper.rb
+    ├── boot_spec.rb
+    └── request/
+        ├── posts_spec.rb
+        ├── comments_spec.rb
+        ├── nested_comments_spec.rb
+        └── handler_boundary_spec.rb
 ```
 
 ### Setup, database, and boot
@@ -154,7 +258,8 @@ bundle exec rake routes
 bundle exec rspec
 ```
 
-`Rakefile` installs the shared tasks with `SampleTasks.install(__dir__)`.
+`Rakefile` loads `support/tasks.rb` and installs the local tasks with
+`SampleApp4::Tasks.install(__dir__)`.
 `db:migrate` loads `database.rb` and applies `db/migrations/001_initial.rb` before
 any models are loaded. The migration creates `posts` and `comments`, including
 required timestamps and a non-null `comments.post_id` foreign key with cascading
@@ -165,15 +270,15 @@ deletion. Schema changes are an explicit step; starting the app never migrates i
 ```ruby
 # frozen_string_literal: true
 
-require_relative '../support/database'
+require_relative 'support/database'
 
 module SampleApp4
   ROOT = __dir__.freeze
-  DB = SampleDatabase.connect(root: ROOT, filename: 'blog.db')
+  DB = Database.connect(root: ROOT, filename: 'blog.db')
 end
 ```
 
-`SampleDatabase.connect` defaults to `sample_app4/blog.db`, using an absolute path.
+`SampleApp4::Database.connect` defaults to `sample_app4/blog.db`, using an absolute path.
 It accepts `DATABASE_URL`, `DB_POOL_SIZE`, and `DB_POOL_TIMEOUT` for deployment.
 In tests it always opens a private in-memory SQLite database; `spec_helper.rb`
 migrates that database before requiring `app.rb`.

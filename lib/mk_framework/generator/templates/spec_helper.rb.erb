@@ -1,0 +1,14 @@
+# frozen_string_literal: true
+
+ENV['RACK_ENV'] = 'test'
+require 'rspec'
+require 'rack/mock'
+require 'rack/builder'
+require 'json'
+require_relative '../database'
+Sequel::Migrator.run(<%= config.namespace %>::DB, File.join(<%= config.namespace %>::ROOT, 'db/migrations'))
+require_relative '../app'
+
+RSpec.configure do |config|
+  config.after(:suite) { <%= config.namespace %>::DB.disconnect }
+end

@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Add `mk_frame_init` with interactive prompts and a non-interactive `--cli`
+  definition for generating a self-contained app, model, create controller/handler,
+  migration, Rack entrypoint, and request specs.
+- Add the reusable `mk_framework:init` Rake task and seven supported field types.
+- Document standalone sample support and the generator installation and CLI flows.
+
 ## 0.2.0 — 2026-09-08
 
 - Release MK as an installable gem with standalone framework tests and packaging.

@@ -1,0 +1,13 @@
+source 'https://rubygems.org'
+
+gem 'mk_framework', '~> <%= MK::VERSION %>'
+gem 'sequel', '>= 5.92', '< 6'
+gem 'sqlite3', '~> 2.9'
+gem 'rake', '~> 13.4'
+gem 'rackup', '~> 2.3'
+gem 'puma', '~> 8.0'
+
+group :test do
+  gem 'rspec', '~> 3.13'
+  gem 'rack-test', '~> 2.2'
+end

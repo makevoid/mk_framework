@@ -11,7 +11,9 @@ Gem::Specification.new do |spec|
   spec.description = 'Resource routing, controllers, and response handlers with optional Sequel persistence.'
   spec.license = 'MIT'
   spec.required_ruby_version = '>= 3.2'
-  spec.files = Dir['lib/**/*.rb', 'README.md', 'LICENSE', 'CHANGELOG.md', 'docs/*.md']
+  spec.files = Dir['lib/**/*.rb', 'lib/**/*.erb', 'bin/*', 'README.md', 'LICENSE', 'CHANGELOG.md', 'docs/*.md']
+  spec.bindir = 'bin'
+  spec.executables = ['mk_frame_init']
   spec.require_paths = ['lib']
   spec.add_dependency 'roda', '>= 3.92', '< 4'
   spec.add_dependency 'rack', '>= 3.2.7', '< 4'

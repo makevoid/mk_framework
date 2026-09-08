@@ -1,0 +1,21 @@
+# frozen_string_literal: true
+
+module <%= config.namespace %>
+  class <%= config.model_class %> < Sequel::Model(DB[:<%= config.resource %>])
+    plugin :validation_helpers
+    plugin :timestamps, update_on_create: true
+
+    def validate
+      super
+      validates_not_null %i[<%= config.field_names.join(' ') %>]
+<% text_fields = config.fields.select { |field| %w[string text].include?(field[:type]) }.map { |field| field[:name] } -%>
+<% unless text_fields.empty? -%>
+      validates_presence %i[<%= text_fields.join(' ') %>]
+<% end -%>
+    end
+
+    def self.public_attributes_list
+      %i[id <%= config.field_names.join(' ') %> created_at updated_at]
+    end
+  end
+end

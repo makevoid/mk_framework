@@ -5,6 +5,8 @@ require_relative 'lib/mk_framework/version'
 
 RSpec::Core::RakeTask.new(:spec)
 
+require_relative 'lib/mk_framework/generator/tasks'
+
 desc 'Build the release gem in pkg/'
 task :build do
   mkdir_p File.join(__dir__, 'pkg')

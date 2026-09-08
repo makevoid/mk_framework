@@ -1,0 +1,17 @@
+# frozen_string_literal: true
+
+require 'mk_framework/sequel'
+require_relative 'database'
+require_relative 'models/<%= config.model_name %>'
+
+module <%= config.namespace %>
+  class App < MK::Application
+    configure root: ROOT, namespace: ::<%= config.namespace %>, legacy_post_routes: false
+
+    resource_routes do
+      resources :<%= config.resource %>, only: [:create], singular: '<%= config.model_name %>'
+    end
+  end
+
+  App.boot!
+end

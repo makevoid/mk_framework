@@ -1,0 +1,14 @@
+# frozen_string_literal: true
+
+Sequel.migration do
+  change do
+    create_table :<%= config.resource %> do
+      primary_key :id
+<% config.fields.each do |field| -%>
+      <%= MK::Generator::Configuration::TYPES.fetch(field[:type])[0] %> :<%= field[:name] %>, null: false<%= field[:type] == 'text' ? ', text: true' : '' %>
+<% end -%>
+      DateTime :created_at, null: false
+      DateTime :updated_at, null: false
+    end
+  end
+end

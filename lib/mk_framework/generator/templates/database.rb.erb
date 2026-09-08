@@ -1,0 +1,15 @@
+# frozen_string_literal: true
+
+require 'sequel'
+require 'sequel/extensions/migration'
+
+module <%= config.namespace %>
+  ROOT = __dir__.freeze
+  DB = if ENV['RACK_ENV'] == 'test'
+         Sequel.sqlite(max_connections: 1)
+       else
+         url = ENV.fetch('DATABASE_URL') { "sqlite://#{File.join(ROOT, '<%= config.app_name %>.db')}" }
+         Sequel.connect(url, max_connections: Integer(ENV.fetch('DB_POOL_SIZE', '5')),
+                        pool_timeout: Integer(ENV.fetch('DB_POOL_TIMEOUT', '5')))
+       end
+end

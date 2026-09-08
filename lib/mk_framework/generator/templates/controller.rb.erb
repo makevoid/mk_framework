@@ -1,0 +1,27 @@
+# frozen_string_literal: true
+<% if config.fields.any? { |field| %w[date datetime].include?(field[:type]) } -%>
+
+require 'date'
+<% end -%>
+
+module <%= config.namespace %>
+  class <%= config.action_prefix %>CreateController < MK::Controller
+    route do |r|
+      attributes = r.input.permit(
+<% config.fields.each_with_index do |field, index| -%>
+        <%= field[:name] %>: <%= MK::Generator::Configuration::TYPES.fetch(field[:type])[1] %><%= index < config.fields.length - 1 ? ',' : '' %>
+<% end -%>
+      )
+<% config.fields.select { |field| %w[date datetime].include?(field[:type]) }.each do |field| -%>
+      if attributes.key?(:<%= field[:name] %>)
+        begin
+          attributes[:<%= field[:name] %>] = <%= field[:type] == 'date' ? 'Date' : 'DateTime' %>.iso8601(attributes.fetch(:<%= field[:name] %>))
+        rescue ArgumentError
+          raise MK::BadRequest, 'Invalid parameter: <%= field[:name] %> (expected ISO 8601)'
+        end
+      end
+<% end -%>
+      <%= config.model_class %>.new(attributes)
+    end
+  end
+end
