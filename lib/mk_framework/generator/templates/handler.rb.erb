@@ -7,9 +7,9 @@ module <%= config.namespace %>
       r.response.status = 201
 <% end -%>
 <% if action == 'index' -%>
-      {<%= config.resource %>: model.map { |record| record.slice(*<%= config.model_class %>.public_attributes_list) }}
+      { <%= config.resource %>: model.map { |record| record.slice(*<%= config.model_class %>.public_attributes_list) } }
 <% else -%>
-      {<%= config.model_name %>: model.slice(*<%= config.model_class %>.public_attributes_list)}
+      { <%= config.model_name %>: model.slice(*<%= config.model_class %>.public_attributes_list) }
 <% end -%>
     end
   end

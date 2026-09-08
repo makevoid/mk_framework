@@ -12,7 +12,7 @@ Each action has its own controller and handler.
 | DELETE | `/<%= config.resource %>/:id` | delete |
 
 Create returns 201; the other actions return 200. Index returns
-`{<%= config.resource %>: [...]}`; member actions return `{<%= config.model_name %>: {...}}`,
+`{ <%= config.resource %>: [...] }`; member actions return `{ <%= config.model_name %>: { ... } }`,
 including the deleted record for DELETE. Missing records return 404.
 
 ## Setup

@@ -57,11 +57,11 @@ RSpec.describe '<%= config.model_class %> CRUD' do
     expect(JSON.parse(response.body).fetch('<%= config.model_name %>')).to eq(record)
   end
 
-<% updated_value = {'string' => 'Updated', 'text' => 'Updated text', 'integer' => 2, 'float' => 2.5, 'boolean' => true, 'date' => '2027-02-03', 'datetime' => '2027-02-03T14:30:00Z'}.fetch(config.fields.first[:type]) -%>
+<% updated_value = { 'string' => 'Updated', 'text' => 'Updated text', 'integer' => 2, 'float' => 2.5, 'boolean' => true, 'date' => '2027-02-03', 'datetime' => '2027-02-03T14:30:00Z' }.fetch(config.fields.first[:type]) -%>
   %w[patch put].each do |verb|
     it "updates permitted fields with #{verb.upcase}, preserving omitted fields and the ID" do
       record = create_record
-      changes = {'<%= config.fields.first[:name] %>' => <%= updated_value.inspect %>, 'id' => 999}
+      changes = { '<%= config.fields.first[:name] %>' => <%= updated_value.inspect %>, 'id' => 999 }
       response = client.public_send(verb, "/<%= config.resource %>/#{record.fetch('id')}",
         input: JSON.generate(changes), 'CONTENT_TYPE' => 'application/json')
       expect(response.status).to eq(200)
