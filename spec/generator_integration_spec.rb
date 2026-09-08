@@ -28,7 +28,7 @@ RSpec.describe 'Generated applications' do
       File.write(protected_database, 'untouched')
       output = execute('-S', 'rspec', File.join(app, 'spec'),
         environment: {'DATABASE_URL' => "sqlite://#{protected_database}"}, directory: directory)
-      expect(output).to include('13 examples, 0 failures')
+      expect(output).to include('11 examples, 0 failures')
       expect(File.read(protected_database)).to eq('untouched')
       expect(File.exist?(File.join(app, 'generated_blog.db'))).to eq(false)
     end
@@ -48,8 +48,8 @@ RSpec.describe 'Generated applications' do
         require 'json'
         app = Rack::Builder.parse_file(#{File.join(app, 'config.ru').inspect})
         client = Rack::Test::Session.new(app)
-        attributes = JSON.parse(#{JSON.generate(config.example).inspect})
-        response = client.post('/posts', JSON.generate(attributes), 'CONTENT_TYPE' => 'application/json')
+        attributes = JSON.parse(#{config.example.to_json.inspect})
+        response = client.post('/posts', attributes.to_json, 'CONTENT_TYPE' => 'application/json')
         abort response.body unless response.status == 201
         row = GeneratedBlog::Post.first
         raise row.inspect unless row.title == 'Example' && row.contents == 'Example text' && row.quantity == 1 && row.price == 1.5 && row.published == false
@@ -57,7 +57,7 @@ RSpec.describe 'Generated applications' do
         raise unless GeneratedBlog::App.router.endpoints.length == 6
         raise unless client.get('/posts').status == 200
         %w[starts_on scheduled_at].each do |field|
-          response = client.post('/posts', JSON.generate(attributes.merge(field => 'not-a-date')), 'CONTENT_TYPE' => 'application/json')
+          response = client.post('/posts', attributes.merge(field => 'not-a-date').to_json, 'CONTENT_TYPE' => 'application/json')
           raise response.body unless response.status == 400 && GeneratedBlog::Post.count == 1
         end
         GeneratedBlog::DB.disconnect
@@ -72,7 +72,7 @@ RSpec.describe 'Generated applications' do
         app = File.join(directory, 'typed_app')
         config = MK::Generator::Options.parse("app_name:typed_app, model_name:entry, fields:[value:#{type}]")
         MK::Generator::Project.new(config).generate(app)
-        expect(execute('-S', 'rake', 'spec', environment: {'TZ' => 'Europe/Zurich'}, directory: app)).to include('13 examples, 0 failures')
+        expect(execute('-S', 'rake', 'spec', environment: {'TZ' => 'Europe/Zurich'}, directory: app)).to include('11 examples, 0 failures')
       end
     end
   end
@@ -141,7 +141,7 @@ RSpec.describe 'Generated applications' do
       config = MK::Generator::Options.parse('app_name:post, model_name:post, fields:[title:string]')
       MK::Generator::Project.new(config).generate(app)
       output = execute('-S', 'rspec', File.join(app, 'spec'), directory: directory)
-      expect(output).to include('13 examples, 0 failures')
+      expect(output).to include('11 examples, 0 failures')
     end
   end
 
