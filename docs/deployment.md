@@ -98,8 +98,8 @@ and access permissions are deployment decisions.
 ## Release procedure
 
 1. Run `bundle install` and `bundle exec rake` with frozen lockfiles in CI.
-2. Require the Linux Ruby matrix to pass before publishing. Local results on one
-   Ruby version are not a substitute for that matrix.
+2. Require the Linux Ruby 4.0 CI job to pass before publishing. Local results are
+   not a substitute for that CI check.
 3. Run `bundle exec rake build`. Inspect and install the generated gem in a clean
    environment, including `require 'mk_framework'` without Sequel and the optional
    `require 'mk_framework/sequel'` with its dependency installed.
@@ -108,7 +108,7 @@ and access permissions are deployment decisions.
 5. Update the version/changelog and publish the reviewed gem using an authorized
    RubyGems account. The gem metadata requires MFA. No publish task runs automatically.
 
-CI runs framework/request tests and builds the gem on Ruby 3.2, 3.3, 3.4, and 4.0.
+CI runs framework/request tests and builds the gem on Ruby 4.0 on Linux.
 The framework root `rake` command runs its standalone specs. The separate sample
 repository runs its integration tests and all seven application suites against the
 published gem, isolating Bundler Gemfile and lockfile paths for each child and

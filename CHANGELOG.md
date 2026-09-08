@@ -7,6 +7,7 @@
   migration, Rack entrypoint, and request specs.
 - Add the reusable `mk_framework:init` Rake task and seven supported field types.
 - Document standalone sample support and the generator installation and CLI flows.
+- Run the Linux CI tests and gem build on Ruby 4.0 only.
 
 ## 0.2.0 — 2026-09-08
 

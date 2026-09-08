@@ -629,7 +629,7 @@ bundle exec rake build
 The gem is written to `pkg/mk_framework-0.2.1.gem`. See
 [deployment](docs/deployment.md) for migrations, connections, authentication,
 timeouts, logging, and release verification, and [upgrading](docs/upgrading.md)
-for changes from the prototype. CI covers Ruby 3.2, 3.3, 3.4, and 4.0 on Linux.
+for changes from the prototype. CI runs on Ruby 4.0 on Linux.
 
 Applications can optionally `require 'mk_framework/testing'` and include
 `MK::Framework::Spec` in RSpec to use Rack::Test and the `resp` JSON helper.
