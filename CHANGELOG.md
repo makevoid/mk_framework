@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0 — 2026-09-08
+
+- Release MK as an installable gem with standalone framework tests and packaging.
+- Move all seven sample applications, their shared support, and integration tests
+  to [mk_framework_sample_apps](https://github.com/makevoid/mk_framework_sample_apps).
+  Applications depend on `mk_framework ~> 0.2.0` from RubyGems.
+- Remove application-only development dependencies and legacy test-helper paths
+  from the framework repository.
+
 ## 0.1.0 — unreleased
 
 - Package MK as an MIT-licensed gem, with a standalone test suite and Ruby 3.2–4.0 CI.
@@ -21,4 +30,4 @@
 ### Migration required
 
 See [the upgrade guide](docs/upgrading.md). The implicit handler persistence API and
-`register_nested_resource` have been replaced. This version has not been published.
+`register_nested_resource` have been replaced. The 0.1.0 prototype was not published; these changes first ship in 0.2.0.

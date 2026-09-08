@@ -18,14 +18,35 @@ Authorization, association selection, and multi-record transactions remain expli
 You can read the core in `lib/mk_framework/`; no ORM or database is loaded until you
 require `mk_framework/sequel`.
 
-## Try the examples
-
-From this checkout:
+## Install
 
 ```sh
+gem install mk_framework -v 0.2.0
+```
+
+Or add it to your application's Gemfile:
+
+```ruby
+source 'https://rubygems.org'
+gem 'mk_framework', '~> 0.2.0'
+```
+
+Run `bundle install`. Add `sequel` and your database driver if you use
+`mk_framework/sequel`; both are optional application dependencies.
+
+## Try the examples
+
+The seven sample applications live in
+[mk_framework_sample_apps](https://github.com/makevoid/mk_framework_sample_apps)
+and install MK from RubyGems. Both GitHub repositories are private; installing the
+published gem does not require access to the framework repository.
+
+From a sample-app checkout:
+
+```sh
+git clone git@github.com:makevoid/mk_framework_sample_apps.git
+cd mk_framework_sample_apps/sample_app4
 bundle install
-bundle exec rake                 # Framework tests and all seven sample suites
-cd sample_apps/sample_app4
 bundle exec rake db:migrate      # Explicit schema setup; never done on server boot
 bundle exec rake routes
 bundle exec rspec
@@ -37,13 +58,13 @@ stub HTTP and require no personal API key or internet connection.
 
 | Sample | Demonstrates |
 | --- | --- |
-| [1](sample_apps/sample_app1/README.md) | Basic todos and JSON CRUD |
-| [2](sample_apps/sample_app2/README.md) | Todo validation and request specs |
-| [3](sample_apps/sample_app3/README.md) | Custom response envelopes |
-| [4](sample_apps/sample_app4/README.md) | Blog posts, nested comments, parent scoping |
-| [5](sample_apps/sample_app5/README.md) | Kanban cards, status validation, nested comments |
-| [6](sample_apps/sample_app6/README.md) | Weather client, deadlines, atomic cache refresh |
-| [7](sample_apps/sample_app7/README.md) | Three-column Kanban board, ordering, priorities, filters, archive and comments |
+| [1](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app1/README.md) | Basic todos and JSON CRUD |
+| [2](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app2/README.md) | Todo validation and request specs |
+| [3](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app3/README.md) | Custom response envelopes |
+| [4](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app4/README.md) | Blog posts, nested comments, parent scoping |
+| [5](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app5/README.md) | Kanban cards, status validation, nested comments |
+| [6](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app6/README.md) | Weather client, deadlines, atomic cache refresh |
+| [7](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app7/README.md) | Three-column Kanban board, ordering, priorities, filters, archive and comments |
 
 ## An application
 
@@ -194,7 +215,7 @@ bundle exec rake
 bundle exec rake build
 ```
 
-The gem is written to `pkg/mk_framework-0.1.0.gem`. See
+The gem is written to `pkg/mk_framework-0.2.0.gem`. See
 [deployment](docs/deployment.md) for migrations, connections, authentication,
 timeouts, logging, and release verification, and [upgrading](docs/upgrading.md)
 for changes from the prototype. CI covers Ruby 3.2, 3.3, 3.4, and 4.0 on Linux.

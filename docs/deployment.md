@@ -2,7 +2,9 @@
 
 MK supplies routing, explicit action dispatch, JSON errors, and request boundaries.
 Authentication policies, schema design, external services, and process operation
-belong to the application. The bundled sample APIs are public demonstrations.
+belong to the application. The APIs in the separate
+[example repository](https://github.com/makevoid/mk_framework_sample_apps) are
+demonstrations without authentication.
 
 ## Configuration
 
@@ -107,5 +109,7 @@ and access permissions are deployment decisions.
    RubyGems account. The gem metadata requires MFA. No publish task runs automatically.
 
 CI runs framework/request tests and builds the gem on Ruby 3.2, 3.3, 3.4, and 4.0.
-The root `rake` command runs the sample suites in separate processes and propagates
-failures. It also isolates Bundler's Gemfile and lockfile paths for each child.
+The framework root `rake` command runs its standalone specs. The separate sample
+repository runs its integration tests and all seven application suites against the
+published gem, isolating Bundler Gemfile and lockfile paths for each child and
+propagating failures.

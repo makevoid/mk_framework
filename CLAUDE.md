@@ -2,11 +2,8 @@
 
 ## Commands
 - Install the root bundle: `bundle install`
-- Run framework and all sample suites: `bundle exec rake`
+- Run framework tests: `bundle exec rake`
 - Run framework specs: `bundle exec rspec spec`
-- Run a sample suite from its directory: `bundle exec rspec`
-- Apply a sample's migrations: `bundle exec rake db:migrate`
-- Inspect a sample's compiled routes: `bundle exec rake routes`
 - Build the gem: `bundle exec rake build`
 
 ## Design and style

@@ -1,6 +1,6 @@
 # Upgrading from the prototype
 
-0.1.0 changes the Ruby API while retaining the original POST mutation URLs by
+0.2.0 changes the Ruby API while retaining the original POST mutation URLs by
 default. Upgrade application code before using the new gem. The six samples have
 already been migrated.
 
