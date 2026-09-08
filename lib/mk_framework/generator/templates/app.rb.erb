@@ -9,7 +9,7 @@ module <%= config.namespace %>
     configure root: ROOT, namespace: ::<%= config.namespace %>, legacy_post_routes: false
 
     resource_routes do
-      resources :<%= config.resource %>, only: [:create], singular: '<%= config.model_name %>'
+      resources :<%= config.resource %>, singular: '<%= config.model_name %>'
     end
   end
 

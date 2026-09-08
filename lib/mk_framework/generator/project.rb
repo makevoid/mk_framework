@@ -13,8 +13,6 @@ module MK
         'README.md' => 'README.md', 'app.rb' => 'app.rb', 'config.ru' => 'config.ru',
         'database.rb' => 'database.rb', 'migration.rb' => 'db/migrations/001_initial.rb',
         'model.rb' => 'models/%{model}.rb',
-        'controller.rb' => 'routes/%{resource}/controllers/create.rb',
-        'handler.rb' => 'routes/%{resource}/handlers/create.rb',
         'spec_helper.rb' => 'spec/spec_helper.rb', 'request_spec.rb' => 'spec/request/%{resource}_spec.rb'
       }.freeze
 
@@ -43,10 +41,17 @@ module MK
 
       def render
         config = @configuration
-        TEMPLATES.to_h do |template, path|
+        files = TEMPLATES.to_h do |template, path|
           source = File.read(File.join(__dir__, 'templates', "#{template}.erb"))
           [format(path, model: config.model_name, resource: config.resource), ERB.new(source, trim_mode: '-').result(binding)]
         end
+        Configuration::ACTIONS.each do |action|
+          %w[controller handler].each do |kind|
+            source = File.read(File.join(__dir__, 'templates', "#{kind}.rb.erb"))
+            files["routes/#{config.resource}/#{kind}s/#{action}.rb"] = ERB.new(source, trim_mode: '-').result(binding)
+          end
+        end
+        files
       end
     end
   end

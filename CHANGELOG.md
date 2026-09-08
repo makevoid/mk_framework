@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.2 — 2026-09-08
+
+- Generate full CRUD resources: index, show, create, update (PATCH and PUT), and
+  delete, with separate controllers and handlers for every action.
+- Make generated apps' default `rake` task invoke `rake dev` and start Puma on
+  `127.0.0.1:3000`, with `HOST` and `PORT` overrides.
+- Include generated request specs for reads, partial updates, deletion, missing
+  records, validation failures, and persistence; verify all supported field types.
+- Store generated-app timestamps in UTC so datetime updates round-trip consistently.
+- Update generator prompts, next steps, and documentation for the complete app.
+
 ## 0.2.1 — 2026-09-08
 
 - Add `mk_frame_init` with interactive prompts and a non-interactive `--cli`

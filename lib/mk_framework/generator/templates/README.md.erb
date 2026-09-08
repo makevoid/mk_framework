@@ -1,8 +1,19 @@
 # <%= config.namespace %>
 
-A self-contained MK app with one `<%= config.model_class %>` model and one resource
-route: `POST /<%= config.resource %>`. The create controller prepares the record;
-MK saves it once, and the handler returns JSON with status 201.
+A self-contained MK app with one `<%= config.model_class %>` model and a full CRUD resource.
+Each action has its own controller and handler.
+
+| Method | Path | Action |
+| --- | --- | --- |
+| GET | `/<%= config.resource %>` | index |
+| GET | `/<%= config.resource %>/:id` | show |
+| POST | `/<%= config.resource %>` | create |
+| PATCH / PUT | `/<%= config.resource %>/:id` | update |
+| DELETE | `/<%= config.resource %>/:id` | delete |
+
+Create returns 201; the other actions return 200. Index returns
+`{<%= config.resource %>: [...]}`; member actions return `{<%= config.model_name %>: {...}}`,
+including the deleted record for DELETE. Missing records return 404.
 
 ## Setup
 
@@ -16,23 +27,27 @@ bundle exec rspec
 Migrations run explicitly, before boot. Development data defaults to
 `<%= config.app_name %>.db` beside `database.rb`. `DATABASE_URL`, `DB_POOL_SIZE`, and
 `DB_POOL_TIMEOUT` configure other connections. Tests always use private in-memory
-SQLite databases and ignore `DATABASE_URL`.
+SQLite databases and ignore `DATABASE_URL`. Datetimes are stored and read in UTC.
 
 To serve the app locally:
 
 ```sh
-bundle exec rackup --host 127.0.0.1 --port 9292
+bundle exec rake       # defaults to rake dev; Puma on http://127.0.0.1:3000
+# or: bundle exec rake dev
 ```
+
+Set `HOST` or `PORT` to override the bind address or port.
 
 Then create a record:
 
 ```sh
-curl -i http://127.0.0.1:9292/<%= config.resource %> \
+curl -i http://127.0.0.1:3000/<%= config.resource %> \
   -H 'Content-Type: application/json' \
   -d '<%= JSON.generate(config.example) %>'
 ```
 
-All chosen fields are required. Invalid input types return 400; missing fields or
+All chosen fields are required on create. PATCH and PUT update only supplied fields
+and preserve omitted fields. Invalid input types return 400; missing fields or
 blank text return 422. Date and datetime inputs use ISO 8601 strings. Booleans
 accept JSON `true` and `false`; numeric fields accept JSON numbers. Unknown fields
 are ignored. IDs and timestamps are assigned by the app.
@@ -43,12 +58,13 @@ are ignored. IDs and timestamps are assigned by the app.
 - `models/<%= config.model_name %>.rb` owns validations and the public field list.
 - `app.rb` loads dependencies and models, configures routes, and calls `boot!`.
 - `config.ru` exposes `<%= config.namespace %>::App.app` to Rack.
-- `routes/<%= config.resource %>/controllers/create.rb` permits inputs and returns an unsaved model.
-- `routes/<%= config.resource %>/handlers/create.rb` filters raw data and formats the response.
+- `routes/<%= config.resource %>/controllers/` contains index, show, create, update, and delete actions.
+- `routes/<%= config.resource %>/handlers/` filters raw data and formats each response.
+- MK saves create/update models once and destroys delete models once.
 - `spec/request/<%= config.resource %>_spec.rb` checks persistence and error responses.
 
 Add a field through a new migration, update permitted input and model validation,
 then decide whether to expose it in `public_attributes_list`. Add another action by
-creating its controller/handler pair and adding it to `resources` in `app.rb`.
+creating its controller/handler pair and declaring the route in `app.rb`.
 The starter has no authentication: implement access rules in controllers before
 using it for private data. Handlers must not query or persist records.

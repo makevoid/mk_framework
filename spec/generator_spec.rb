@@ -19,6 +19,14 @@ RSpec.describe MK::Generator do
       expect(config.fields.map { |field| field[:type] }).to eq(MK::Generator::Configuration::TYPES.keys)
     end
 
+    it 'rejects model names that collide with any generated action class' do
+      %w[index show create update delete].product(%w[controller handler]).each do |action, kind|
+        expect do
+          described_class.parse("app_name:blog, model_name:posts_#{action}_#{kind}, resource_name:posts, fields:[title:string]")
+        end.to raise_error(MK::Generator::InvalidInput, /conflicts/)
+      end
+    end
+
     it 'supports singular model names and conventional plural resources' do
       {'post' => 'posts', 'category' => 'categories', 'status' => 'statuses'}.each do |model, resource|
         config = described_class.parse("app_name:blog, model_name:#{model}, fields:[title:string]")
@@ -53,15 +61,15 @@ RSpec.describe MK::Generator do
   end
 
   describe MK::Generator::Project do
-    it 'creates exactly one model, controller, and handler with local setup files' do
+    it 'creates one model and controller/handler pairs for every CRUD action' do
       Dir.mktmpdir do |directory|
         target = File.join(directory, 'blog')
         described_class.new(configuration).generate(target)
         expect(Dir[File.join(target, 'models/*.rb')].length).to eq(1)
-        expect(Dir[File.join(target, 'routes/*/controllers/*.rb')].length).to eq(1)
-        expect(Dir[File.join(target, 'routes/*/handlers/*.rb')].length).to eq(1)
+        expect(Dir[File.join(target, 'routes/*/controllers/*.rb')].map { |path| File.basename(path, '.rb') }).to match_array(%w[index show create update delete])
+        expect(Dir[File.join(target, 'routes/*/handlers/*.rb')].map { |path| File.basename(path, '.rb') }).to match_array(%w[index show create update delete])
         expect(File.read(File.join(target, '.gitignore'))).to include('.env.*')
-        expect(File.read(File.join(target, 'app.rb'))).to include('only: [:create]')
+        expect(File.read(File.join(target, 'app.rb'))).to include("resources :posts, singular: 'post'")
         expect(Dir[File.join(target, '**/*')].select { |path| File.file?(path) }.map { |path| File.read(path) }.join).not_to include("../support/")
       end
     end

@@ -3,6 +3,8 @@
 require 'sequel'
 require 'sequel/extensions/migration'
 
+Sequel.default_timezone = :utc
+
 module <%= config.namespace %>
   ROOT = __dir__.freeze
   DB = if ENV['RACK_ENV'] == 'test'

@@ -22,4 +22,11 @@ task :spec do
   sh RbConfig.ruby, '-S', 'rspec', File.join(__dir__, 'spec')
 end
 
-task default: :spec
+desc 'Start Puma on port 3000 (HOST and PORT override the defaults)'
+task :dev do
+  exec RbConfig.ruby, '-S', 'puma', '--bind',
+       "tcp://#{ENV.fetch('HOST', '127.0.0.1')}:#{ENV.fetch('PORT', '3000')}",
+       File.join(__dir__, 'config.ru'), chdir: __dir__
+end
+
+task default: :dev

@@ -37,7 +37,7 @@ module MK
           return generate(config, arguments.first || config.app_name)
         end
 
-        @output.puts 'MK app generator — one resource, model, create controller, and handler.'
+        @output.puts 'MK app generator — one model and a full CRUD resource with controllers and handlers.'
         @output.puts 'Press Ctrl-C to cancel. All fields are required; id and timestamps are automatic.'
         app = validated('1. App name (snake_case)') { |value| Configuration.app_name!(value) }
         model = validated('2. Model name (singular snake_case)') { |value| Configuration.model_name!(value) }
@@ -47,7 +47,7 @@ module MK
         fields = collect_fields
         config = Configuration.new(app_name: app, model_name: model, resource: resource, fields: fields)
         destination = File.expand_path(arguments.first || app)
-        @output.puts "\nApp: #{config.namespace}; model: #{config.model_class}; route: POST /#{resource}"
+        @output.puts "\nApp: #{config.namespace}; model: #{config.model_class}; resource: /#{resource} (index, show, create, update, delete)"
         @output.puts "Fields: #{fields.map { |field| "#{field[:name]}:#{field[:type]}" }.join(', ')}"
         @output.puts "Directory: #{destination}"
         answer = validated('5. Generate these files? (y/n)', default: 'y') do |value|
@@ -70,7 +70,7 @@ module MK
         destination = Project.new(config).generate(destination)
         @output.puts "\nCreated #{destination}\nNext steps:"
         @output.puts "  cd #{Shellwords.escape(destination)}"
-        @output.puts "  bundle install\n  bundle exec rake db:migrate\n  bundle exec rake routes\n  bundle exec rspec"
+        @output.puts "  bundle install\n  bundle exec rake db:migrate\n  bundle exec rake routes\n  bundle exec rspec\n  bundle exec rake"
         0
       end
 

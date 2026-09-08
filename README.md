@@ -21,14 +21,14 @@ require `mk_framework/sequel`.
 ## Install
 
 ```sh
-gem install mk_framework -v 0.2.1
+gem install mk_framework -v 0.2.2
 ```
 
 Or add it to your application's Gemfile:
 
 ```ruby
 source 'https://rubygems.org'
-gem 'mk_framework', '~> 0.2.1'
+gem 'mk_framework', '~> 0.2.2'
 ```
 
 Run `bundle install`. Add `sequel` and your database driver if you use
@@ -36,11 +36,11 @@ Run `bundle install`. Add `sequel` and your database driver if you use
 
 ## Generate an app with `mk_frame_init`
 
-Version 0.2.1 includes the `mk_frame_init` executable. Install the gem, then run
+Version 0.2.2 generates full CRUD apps with the `mk_frame_init` executable. Install the gem, then run
 it from the parent directory where you want your new app:
 
 ```sh
-gem install mk_framework -v 0.2.1
+gem install mk_framework -v 0.2.2
 mk_frame_init
 ```
 
@@ -54,7 +54,7 @@ The interactive CLI asks, in order:
 3. Resource/table name, defaulting to `posts`.
 4. Each field name and its type, selected by menu number or type name. Leave the
    next field name blank to finish.
-5. Confirmation of the app, model, fields, route, and destination.
+5. Confirmation of the app, model, fields, resource actions, and destination.
 
 Use lowercase names with underscores. The supported types are `string`, `text`,
 `integer`, `float`, `boolean`, `date`, and `datetime`. At least one field is required;
@@ -70,8 +70,9 @@ argument. This mode never prompts or asks for confirmation:
 mk_frame_init --cli 'app_name:blog, model_name:posts, fields:[title:string, contents:text, published:boolean]'
 ```
 
-This creates `./blog`, a `Blog::Post` model backed by `posts`, and a single
-`POST /posts` create route with one controller and one handler. Inline
+This creates `./blog`, a `Blog::Post` model backed by `posts`, and full CRUD routes:
+`GET /posts`, `GET /posts/:id`, `POST /posts`, `PATCH /posts/:id`, `PUT /posts/:id`,
+and `DELETE /posts/:id`. Each action has its own controller and handler. Inline
 `model_name` accepts a singular or conventional plural name (`post` or `posts`).
 For a custom table/URL name, add `resource_name:articles`. Names are simple Ruby
 identifiers; the inline format is parsed as data, never evaluated as Ruby.
@@ -94,7 +95,10 @@ bundle install
 bundle exec rake db:migrate
 bundle exec rake routes
 bundle exec rspec
+bundle exec rake        # same as rake dev; starts Puma on port 3000
 ```
+
+Set `HOST` or `PORT` to override the default `127.0.0.1:3000` bind address.
 
 The result is self-contained:
 
@@ -109,8 +113,8 @@ blog_api/
 ├── config.ru
 ├── db/migrations/001_initial.rb
 ├── models/post.rb
-├── routes/posts/controllers/create.rb
-├── routes/posts/handlers/create.rb
+├── routes/posts/controllers/{index,show,create,update,delete}.rb
+├── routes/posts/handlers/{index,show,create,update,delete}.rb
 ├── spec/spec_helper.rb
 └── spec/request/posts_spec.rb
 ```
@@ -118,7 +122,9 @@ blog_api/
 `database.rb` connects to a local SQLite file, or `DATABASE_URL`. Migrations are
 explicit and run before models load. Tests always migrate a private in-memory
 database. The controller permits the chosen fields and returns `Post.new(...)`;
-MK saves once, then the handler returns `{post: ...}` with status 201. The generated
+MK saves once, then the handler returns `{post: ...}` with status 201. Index returns
+`{posts: [...]}`; show, update, and delete return `{post: ...}` with status 200.
+PATCH and PUT preserve omitted fields; missing records return 404. The generated
 README includes a local server command, an example request, and extension guidance.
 
 The framework checkout also exposes the same generator as a Rake task:
@@ -626,7 +632,7 @@ bundle exec rake
 bundle exec rake build
 ```
 
-The gem is written to `pkg/mk_framework-0.2.1.gem`. See
+The gem is written to `pkg/mk_framework-0.2.2.gem`. See
 [deployment](docs/deployment.md) for migrations, connections, authentication,
 timeouts, logging, and release verification, and [upgrading](docs/upgrading.md)
 for changes from the prototype. CI runs on Ruby 4.0 on Linux.

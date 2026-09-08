@@ -2,7 +2,7 @@
 
 require_relative '../spec_helper'
 
-RSpec.describe '<%= config.model_class %> creation' do
+RSpec.describe '<%= config.model_class %> CRUD' do
   let(:client) { Rack::MockRequest.new(Rack::Builder.parse_file(File.join(<%= config.namespace %>::ROOT, 'config.ru'))) }
   let(:attributes) { JSON.parse(<%= JSON.generate(config.example).inspect %>) }
 
@@ -34,5 +34,75 @@ RSpec.describe '<%= config.model_class %> creation' do
 
     expect(response.status).to eq(400)
     expect(<%= config.namespace %>::<%= config.model_class %>.count).to eq(0)
+  end
+
+  def create_record
+    response = client.post('/<%= config.resource %>', input: JSON.generate(attributes), 'CONTENT_TYPE' => 'application/json')
+    expect(response.status).to eq(201)
+    JSON.parse(response.body).fetch('<%= config.model_name %>')
+  end
+
+  it 'lists records in ID order, including an empty collection' do
+    expect(JSON.parse(client.get('/<%= config.resource %>').body)).to eq('<%= config.resource %>' => [])
+    records = [create_record, create_record]
+    response = client.get('/<%= config.resource %>')
+    expect(response.status).to eq(200)
+    expect(JSON.parse(response.body).fetch('<%= config.resource %>')).to eq(records)
+  end
+
+  it 'shows a single record' do
+    record = create_record
+    response = client.get("/<%= config.resource %>/#{record.fetch('id')}")
+    expect(response.status).to eq(200)
+    expect(JSON.parse(response.body).fetch('<%= config.model_name %>')).to eq(record)
+  end
+
+<% updated_value = {'string' => 'Updated', 'text' => 'Updated text', 'integer' => 2, 'float' => 2.5, 'boolean' => true, 'date' => '2027-02-03', 'datetime' => '2027-02-03T14:30:00Z'}.fetch(config.fields.first[:type]) -%>
+  %w[patch put].each do |verb|
+    it "updates permitted fields with #{verb.upcase}, preserving omitted fields and the ID" do
+      record = create_record
+      changes = {'<%= config.fields.first[:name] %>' => <%= updated_value.inspect %>, 'id' => 999}
+      response = client.public_send(verb, "/<%= config.resource %>/#{record.fetch('id')}",
+        input: JSON.generate(changes), 'CONTENT_TYPE' => 'application/json')
+      expect(response.status).to eq(200)
+      payload = JSON.parse(response.body).fetch('<%= config.model_name %>')
+      expect(payload.fetch('id')).to eq(record.fetch('id'))
+<% if config.fields.first[:type] == 'datetime' -%>
+      expect(DateTime.parse(payload.fetch('<%= config.fields.first[:name] %>'))).to eq(DateTime.iso8601(<%= updated_value.inspect %>))
+<% else -%>
+      expect(payload.fetch('<%= config.fields.first[:name] %>')).to eq(<%= updated_value.inspect %>)
+<% end -%>
+      expect(payload.except('<%= config.fields.first[:name] %>', 'updated_at')).to eq(record.except('<%= config.fields.first[:name] %>', 'updated_at'))
+      expect(JSON.parse(client.get("/<%= config.resource %>/#{record.fetch('id')}").body).fetch('<%= config.model_name %>')).to eq(payload)
+      expect(<%= config.namespace %>::<%= config.model_class %>.count).to eq(1)
+    end
+  end
+
+  it 'rejects invalid updates without changing stored data' do
+    record = create_record
+    <%= %w[string text].include?(config.fields.first[:type]) ? "[[[], 400], [nil, 400], ['', 422]]" : '[[[], 400], [nil, 400]]' %>.each do |value, status|
+      response = client.patch("/<%= config.resource %>/#{record.fetch('id')}",
+        input: JSON.generate('<%= config.fields.first[:name] %>' => value), 'CONTENT_TYPE' => 'application/json')
+      expect(response.status).to eq(status)
+      expect(JSON.parse(client.get("/<%= config.resource %>/#{record.fetch('id')}").body).fetch('<%= config.model_name %>')).to eq(record)
+    end
+  end
+
+  it 'deletes a record and returns its public attributes' do
+    record = create_record
+    response = client.delete("/<%= config.resource %>/#{record.fetch('id')}")
+    expect(response.status).to eq(200)
+    expect(JSON.parse(response.body).fetch('<%= config.model_name %>')).to eq(record)
+    expect(<%= config.namespace %>::<%= config.model_class %>.count).to eq(0)
+    expect(client.get("/<%= config.resource %>/#{record.fetch('id')}").status).to eq(404)
+  end
+
+  %w[get patch put delete].each do |verb|
+    it "returns 404 for #{verb.upcase} of a missing record" do
+      response = client.public_send(verb, '/<%= config.resource %>/999999',
+        input: JSON.generate(attributes), 'CONTENT_TYPE' => 'application/json')
+      expect(response.status).to eq(404)
+      expect(<%= config.namespace %>::<%= config.model_class %>.count).to eq(0)
+    end
   end
 end

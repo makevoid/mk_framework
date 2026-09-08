@@ -5,6 +5,7 @@ module MK
     class InvalidInput < ArgumentError; end
 
     class Configuration
+      ACTIONS = %w[index show create update delete].freeze
       TYPES = {
         'string' => ['String', 'String', 'Example'],
         'text' => ['String', 'String', 'Example text'],
@@ -67,8 +68,7 @@ module MK
         @app_name = self.class.app_name!(app_name).dup.freeze
         @model_name = self.class.model_name!(model_name).dup.freeze
         @resource = self.class.identifier!(resource, label: 'Resource name').dup.freeze
-        if self.class.camelize(resource) + 'CreateController' == model_class ||
-           self.class.camelize(resource) + 'CreateHandler' == model_class
+        if ACTIONS.product(%w[Controller Handler]).any? { |action, kind| action_prefix + action.capitalize + kind == model_class }
           raise InvalidInput, 'Model name conflicts with a generated action class.'
         end
         raise InvalidInput, 'Add at least one field.' if fields.empty?

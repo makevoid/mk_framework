@@ -1,10 +1,16 @@
 # frozen_string_literal: true
 
 module <%= config.namespace %>
-  class <%= config.action_prefix %>CreateHandler < MK::Handler
+  class <%= config.action_prefix %><%= action.capitalize %>Handler < MK::Handler
     handler do |r|
+<% if action == 'create' -%>
       r.response.status = 201
+<% end -%>
+<% if action == 'index' -%>
+      {<%= config.resource %>: model.map { |record| record.slice(*<%= config.model_class %>.public_attributes_list) }}
+<% else -%>
       {<%= config.model_name %>: model.slice(*<%= config.model_class %>.public_attributes_list)}
+<% end -%>
     end
   end
 end
