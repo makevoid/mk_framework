@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.3 — 2026-09-12
+
+- Use `rack-test` and `Rack::Test::Methods` in generated request specs.
+- Simplify generated update specs to use PUT and serialize request bodies with
+  `.to_json`.
+- Format generated Ruby hashes with spaces inside nonempty braces.
+
 ## 0.2.2 — 2026-09-08
 
 - Generate full CRUD resources: index, show, create, update (PATCH and PUT), and

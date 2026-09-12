@@ -21,14 +21,14 @@ require `mk_framework/sequel`.
 ## Install
 
 ```sh
-gem install mk_framework -v 0.2.2
+gem install mk_framework -v 0.2.3
 ```
 
 Or add it to your application's Gemfile:
 
 ```ruby
 source 'https://rubygems.org'
-gem 'mk_framework', '~> 0.2.2'
+gem 'mk_framework', '~> 0.2.3'
 ```
 
 Run `bundle install`. Add `sequel` and your database driver if you use
@@ -36,11 +36,11 @@ Run `bundle install`. Add `sequel` and your database driver if you use
 
 ## Generate an app with `mk_frame_init`
 
-Version 0.2.2 generates full CRUD apps with the `mk_frame_init` executable. Install the gem, then run
+Version 0.2.3 generates full CRUD apps with the `mk_frame_init` executable. Install the gem, then run
 it from the parent directory where you want your new app:
 
 ```sh
-gem install mk_framework -v 0.2.2
+gem install mk_framework -v 0.2.3
 mk_frame_init
 ```
 
@@ -632,7 +632,7 @@ bundle exec rake
 bundle exec rake build
 ```
 
-The gem is written to `pkg/mk_framework-0.2.2.gem`. See
+The gem is written to `pkg/mk_framework-0.2.3.gem`. See
 [deployment](docs/deployment.md) for migrations, connections, authentication,
 timeouts, logging, and release verification, and [upgrading](docs/upgrading.md)
 for changes from the prototype. CI runs on Ruby 4.0 on Linux.
