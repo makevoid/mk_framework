@@ -25,3 +25,10 @@
 - Add meaningful regression tests for changed behavior and propagate child test failures.
 - Use the README and docs for the current API; `success`/`error` persistence blocks and
   `register_nested_resource` belong to the old prototype and are no longer supported.
+
+## Generated request examples
+
+Generate five explicit CRUD examples using plain `describe` and direct HTTP calls.
+Import the application namespace in the spec helper so model references are short.
+Do not generate examples with loops or `public_send`. Keep only the array/400
+invalid-update check inside the PUT example; omit null/blank status matrices.

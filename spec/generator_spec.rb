@@ -61,6 +61,19 @@ RSpec.describe MK::Generator do
   end
 
   describe MK::Generator::Project do
+    it 'generates five explicit CRUD examples with short model names' do
+      Dir.mktmpdir do |directory|
+        target = File.join(directory, 'blog')
+        described_class.new(configuration).generate(target)
+        source = File.read(File.join(target, 'spec/request/posts_spec.rb'))
+        helper = File.read(File.join(target, 'spec/spec_helper.rb'))
+        expect(source).to include("describe 'Post CRUD' do", 'Post.dataset.delete')
+        expect(source.scan(/^  it '/).length).to eq(5)
+        expect(source).not_to include('RSpec.describe', 'Blog::Post', 'public_send', '.each do', '=> nil')
+        expect(helper).to include('include Blog')
+      end
+    end
+
     it 'creates one model and controller/handler pairs for every CRUD action' do
       Dir.mktmpdir do |directory|
         target = File.join(directory, 'blog')

@@ -28,7 +28,7 @@ RSpec.describe 'Generated applications' do
       File.write(protected_database, 'untouched')
       output = execute('-S', 'rspec', File.join(app, 'spec'),
         environment: {'DATABASE_URL' => "sqlite://#{protected_database}"}, directory: directory)
-      expect(output).to include('11 examples, 0 failures')
+      expect(output).to include('5 examples, 0 failures')
       expect(File.read(protected_database)).to eq('untouched')
       expect(File.exist?(File.join(app, 'generated_blog.db'))).to eq(false)
     end
@@ -72,7 +72,7 @@ RSpec.describe 'Generated applications' do
         app = File.join(directory, 'typed_app')
         config = MK::Generator::Options.parse("app_name:typed_app, model_name:entry, fields:[value:#{type}]")
         MK::Generator::Project.new(config).generate(app)
-        expect(execute('-S', 'rake', 'spec', environment: {'TZ' => 'Europe/Zurich'}, directory: app)).to include('11 examples, 0 failures')
+        expect(execute('-S', 'rake', 'spec', environment: {'TZ' => 'Europe/Zurich'}, directory: app)).to include('5 examples, 0 failures')
       end
     end
   end
@@ -141,7 +141,7 @@ RSpec.describe 'Generated applications' do
       config = MK::Generator::Options.parse('app_name:post, model_name:post, fields:[title:string]')
       MK::Generator::Project.new(config).generate(app)
       output = execute('-S', 'rspec', File.join(app, 'spec'), directory: directory)
-      expect(output).to include('11 examples, 0 failures')
+      expect(output).to include('5 examples, 0 failures')
     end
   end
 

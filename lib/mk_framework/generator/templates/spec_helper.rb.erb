@@ -9,6 +9,8 @@ require_relative '../database'
 Sequel::Migrator.run(<%= config.namespace %>::DB, File.join(<%= config.namespace %>::ROOT, 'db/migrations'))
 require_relative '../app'
 
+include <%= config.namespace %>
+
 RSpec.configure do |config|
   config.after(:suite) { <%= config.namespace %>::DB.disconnect }
 end

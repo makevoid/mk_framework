@@ -123,7 +123,7 @@ blog_api/
 explicit and run before models load. Tests always migrate a private in-memory
 database. The controller permits the chosen fields and returns `Post.new(...)`;
 MK saves once, then the handler returns `{post: ...}` with status 201. Index returns
-`{posts: [...]}`; show, update, and delete return `{post: ...}` with status 200.
+`{posts: [...]}` with bounded `limit`/`offset` pagination; show, update, and delete return `{post: ...}` with status 200.
 PATCH and PUT preserve omitted fields; missing records return 404. The generated
 README includes a local server command, an example request, and extension guidance.
 
@@ -140,10 +140,10 @@ task in another project's Rakefile, add `require 'mk_framework/generator/tasks'`
 
 ## Try the examples
 
-The seven sample applications live in
+Twenty paired sample applications (JSON APIs and MkFrame frontends) live in
 [mk_framework_sample_apps](https://github.com/makevoid/mk_framework_sample_apps)
-and install MK from RubyGems. Both GitHub repositories are private; installing the
-published gem does not require access to the framework repository.
+and install MK from RubyGems. Each sample has its own README, database migrations
+and isolated request specs. Backend use does not require a framework source checkout.
 
 From a sample-app checkout:
 
@@ -166,9 +166,22 @@ stub HTTP and require no personal API key or internet connection.
 | [2](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app2/README.md) | Todo validation and request specs |
 | [3](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app3/README.md) | Custom response envelopes |
 | [4](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app4/README.md) | Blog posts, nested comments, parent scoping |
-| [5](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app5/README.md) | Kanban cards, status validation, nested comments |
+| [5](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app5/README.md) | Kanban cards, validation, nested comments |
 | [6](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app6/README.md) | Weather client, deadlines, atomic cache refresh |
-| [7](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app7/README.md) | Three-column Kanban board, ordering, priorities, filters, archive and comments |
+| [7](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app7/README.md) | Kanban board, ordering, priorities, filters, archive and comments |
+| [8](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app8/README.md) | Single-user ecommerce, product image uploads and a persistent cart |
+| [9](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app9/README.md) | Fictional electric car inventory, charging specs and reservations |
+| [10](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app10/README.md) | Buildlog developer journal, project portfolio and private publishing workbench |
+| [11](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app11/README.md) | Rolecraft job board, employer submissions, moderation and private applications |
+| [12](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app12/README.md) | Reboot Market electronics classifieds, photo uploads, private inquiries, saved searches and moderation |
+| [13](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app13/README.md) | Pinpoint map directory, geographic filters, contributor history and transactional approval |
+| [14](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app14/README.md) | Studio Hours timed resource bookings, Zurich availability, maintenance and transactional conflict prevention |
+| [15](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app15/README.md) | Pantry Table recipes, private meal plans, pantry stock and derived shopping quantities |
+| [16](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app16/README.md) | Assembly community events, workshop capacity, FIFO waitlists, organizer management and check-in |
+| [17](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app17/README.md) | Fairshare private expense groups, exact splits, receipts, balances and reimbursements |
+| [18](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app18/README.md) | Signalboard feedback, voting, moderation, duplicate merges, roadmap and releases |
+| [19](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app19/README.md) | Night Archive NASA discovery, private collections and observing journal |
+| [20](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app20/README.md) | Fieldwork private plant collection, care schedules and growth journals |
 
 ## Walkthrough: sample app 4, a blog API
 
@@ -186,16 +199,14 @@ parent scoping checks the relationship, while user access rules belong in your a
 
 ### Directory structure
 
-Each sample carries its own namespaced database and Rake helpers in `support/`,
-so you can copy `sample_app4/` alone to start a separate project. This tree lists
+The samples share database and Rake helpers in the repository-level `support/`
+directory. Keep that directory when copying a sample; use the CLI above for a
+self-contained starter. This tree lists
 the six action files explained below; the sample also includes the remaining CRUD
 controllers and handlers for both resources.
 
 ```text
 sample_app4/
-├── support/
-│   ├── database.rb              # SampleApp4::Database: connections and migrations
-│   └── tasks.rb                 # SampleApp4::Tasks: db:migrate, routes, and specs
 ├── Gemfile
 ├── Rakefile
 ├── database.rb              # SampleApp4::ROOT and SampleApp4::DB
@@ -235,7 +246,7 @@ and request-test dependencies:
 ```ruby
 source 'https://rubygems.org'
 
-gem 'mk_framework', '~> 0.2.0'
+gem 'mk_framework', '~> 0.2.2'
 gem 'sequel', '>= 5.92', '< 6'
 gem 'sqlite3', '~> 2.9'
 gem 'rake', '~> 13.4'
@@ -257,8 +268,8 @@ bundle exec rake routes
 bundle exec rspec
 ```
 
-`Rakefile` loads `support/tasks.rb` and installs the local tasks with
-`SampleApp4::Tasks.install(__dir__)`.
+`Rakefile` loads `../support/tasks.rb` and installs the shared tasks with
+`SampleTasks.install(__dir__)`.
 `db:migrate` loads `database.rb` and applies `db/migrations/001_initial.rb` before
 any models are loaded. The migration creates `posts` and `comments`, including
 required timestamps and a non-null `comments.post_id` foreign key with cascading
@@ -269,15 +280,15 @@ deletion. Schema changes are an explicit step; starting the app never migrates i
 ```ruby
 # frozen_string_literal: true
 
-require_relative 'support/database'
+require_relative '../support/database'
 
 module SampleApp4
   ROOT = __dir__.freeze
-  DB = Database.connect(root: ROOT, filename: 'blog.db')
+  DB = SampleDatabase.connect(root: ROOT, filename: 'blog.db')
 end
 ```
 
-`SampleApp4::Database.connect` defaults to `sample_app4/blog.db`, using an absolute path.
+`SampleDatabase.connect` defaults to `sample_app4/blog.db`, using an absolute path.
 It accepts `DATABASE_URL`, `DB_POOL_SIZE`, and `DB_POOL_TIMEOUT` for deployment.
 In tests it always opens a private in-memory SQLite database; `spec_helper.rb`
 migrates that database before requiring `app.rb`.
@@ -599,25 +610,196 @@ Known paths with unsupported methods return 405 and `Allow`; unknown paths retur
 Read [nested routes and authorization](docs/routing.md) for scopes, namespaces,
 shallow routes, custom actions, explicit class mappings, and parent ownership.
 
-## Inputs, responses, and errors
+## Working with the request (`r`)
 
-- `r.path_params` is a frozen symbol-keyed hash containing only URL captures.
-- `r.input` validates body/query input independently of path IDs. `require(:name)`
-  requires a typed field; `permit(name: String)` allows only declared fields.
-- `:boolean` accepts booleans and the form strings `true`, `false`, `1`, `0`.
-  Nullable fields must explicitly include `NilClass` in their accepted types.
-- `r.params` remains compatible with older controllers, with path IDs taking
-  precedence. Never use client input to establish a parent relationship.
-- `r.page` validates `limit` (default 25, maximum 100) and `offset` (maximum 10,000).
-  `paginate(dataset, r)` in `MK::Persistence` uses an ordered, bounded query.
-  Implement cursor pagination in your application when large offsets are needed.
-- JSON request bodies must be objects. Malformed JSON and malformed query inputs
-  produce 400. Bodies above 1 MiB produce 413, including bodies without a length.
-- `MK::BadRequest`, `Unauthorized`, `Forbidden`, `NotFound`, `Conflict`,
-  `ValidationError`, and `BadGateway` represent intentional public errors.
-  Their messages are public: never place secrets in them.
-- Unexpected errors return JSON with `error: "Server error"` and a request ID.
-  The same ID appears in `X-Request-ID` and the structured error log.
+`r` is the current Roda request, extended with MK's input and pagination helpers.
+Controllers use `route do |r|` to load records and prepare changes; handlers use
+`handler do |r|` to format the resulting raw data and choose a response status.
+The snippets below belong inside the application's namespace, after defining its
+models. Define routes and configuration before calling `App.boot!`.
+
+### Declare routes
+
+Inside your `MK::Application` subclass:
+
+```ruby
+configure root: ROOT, namespace: Blog, legacy_post_routes: false
+
+resource_routes do
+  resources :posts do
+    resources :comments
+  end
+end
+```
+
+`resources :posts` maps the CRUD URLs in the table above to
+`PostsIndexController`/`PostsIndexHandler`, `PostsShowController`/`PostsShowHandler`,
+and the corresponding create, update and delete pairs. Files live under
+`routes/posts/controllers/` and `routes/posts/handlers/`. Nested comments still
+use action files under `routes/comments/`; nesting changes the URL, not the files.
+
+Restrict actions or add a named endpoint explicitly:
+
+```ruby
+resource_routes do
+  resources :posts, only: %i[index show] do
+    member :publish, via: :post
+  end
+end
+```
+
+The member action maps `POST /posts/:id/publish` to
+`PostsPublishController` and `PostsPublishHandler`. Supply both classes before
+boot. Custom actions do not automatically save their returned models; persistence
+must be explicit. Inspect the compiled mapping with `puts App.route_table`.
+
+### URL identifiers: `r.path_params`
+
+For `PUT /posts/12/comments/34`, the nested declaration captures:
+
+```ruby
+r.path_params # => { post_id: '12', id: '34' }
+```
+
+This is a frozen hash with symbol keys and string values. IDs may be slugs or
+UUIDs; MK does not coerce them to integers. Collection routes contain parent IDs
+but no member `:id`. Body and query fields cannot overwrite these captures.
+
+Load a nested record through its parent in the controller:
+
+```ruby
+route do |r|
+  post = Post[r.path_params.fetch(:post_id)] or raise MK::NotFound
+  comment = post.comments_dataset.where(id: r.path_params.fetch(:id)).first
+  raise MK::NotFound unless comment
+
+  comment.set(r.input.permit(content: String))
+end
+```
+
+The URL describes the relationship; it does not load or authorize a parent.
+In an authenticated app, first scope the parent query to the current user's
+allowed records. Assign foreign keys from that parent, not from client input.
+
+### Body and query fields: `r.input`
+
+Use `permit` to select fields and validate their types. It returns a symbol-keyed
+hash, drops unknown fields, and omits fields the client did not send:
+
+```ruby
+route do |r|
+  attributes = r.input.permit(
+    title: String,
+    description: [String, NilClass],
+    published: :boolean
+  )
+  Post.new(attributes)
+end
+```
+
+`permit` does not require a field to be present. Model validation can reject a
+missing title with 422 when MK saves the returned model. A present value of the
+wrong type raises `MK::BadRequest` (400). `NilClass` explicitly permits JSON null;
+`String` alone does not. Length, uniqueness and other domain rules belong in the
+model or controller. Nested objects are not recursively allowlisted for you.
+
+For a required input, call `require` (its default type is `String`):
+
+```ruby
+query = r.input.require(:query)
+quantity = r.input.require(:quantity, type: Integer)
+```
+
+A missing key or invalid type returns 400. An empty string still has type String;
+check whether it is meaningful in your application. `Integer` accepts a JSON
+integer, not the query string `"3"`. Use the integer helper for numeric query
+parameters or form fields:
+
+```ruby
+quantity = r.input.integer(:quantity, default: 1, min: 1, max: 20)
+```
+
+This accepts integers and strings of decimal digits, applies the default only
+when the field is absent, and returns 400 for invalid values or bounds. It does
+not silently clamp them. `:boolean` accepts JSON `true`/`false` and the strings
+`"true"`, `"false"`, `"1"`, `"0"`; false is retained in permitted attributes.
+Dates arrive as strings: parse them explicitly, as the CLI's date fields do.
+
+`r.input` reads body/query input separately from path captures. The compatibility
+`r.params` hash combines input with string-keyed path captures, and path values
+win on collision. Prefer `r.path_params` for identity and `r.input` for attributes.
+
+### Bounded pagination: `r.page`
+
+For `GET /posts?limit=10&offset=20`, `r.page` returns
+`{ limit: 10, offset: 20 }`. Apply it to an ordered query:
+
+```ruby
+route do |r|
+  page = r.page
+  Post.order(:id).limit(page[:limit], page[:offset])
+end
+```
+
+The helper validates parameters; it does not query the database or add response
+metadata. Defaults are `limit: 25` and `offset: 0`. Allowed limits are 1–100 and
+allowed offsets are 0–10,000. Invalid inputs return 400. Override the bounds in
+the application before boot:
+
+```ruby
+configure page_size: 20, max_page_size: 50, max_offset: 5_000
+```
+
+All three settings must be positive integers, and `page_size` cannot exceed
+`max_page_size`. Controllers that include `MK::Persistence` can instead use
+`paginate(Post.dataset, r)`, which orders by `id`, applies these bounds and returns
+an array. For large datasets, implement cursor pagination in your application.
+
+### Response status, headers and early returns
+
+Handlers receive prepared raw data through `model` and return hashes or arrays.
+MK serializes the response; do not call `to_json` in a handler:
+
+```ruby
+handler do |r|
+  r.response.status = 201
+  r.response['location'] = "/posts/#{model.fetch(:id)}"
+  { post: model.slice(:id, :title) }
+end
+```
+
+Use an MK error for an intentional failure such as `raise MK::NotFound` or
+`raise MK::Forbidden`. Use `r.halt` when you need an explicit early response:
+
+```ruby
+r.halt(409, { error: 'Post is already published' })
+```
+
+Request-scoped application data can be stored in `r.env`, for example a verified
+user set by `before_request`. Native Roda routes also work and run before resource
+routes; return `nil` when they should fall through:
+
+```ruby
+route do |r|
+  r.get('health') { { ok: true } }
+  nil
+end
+```
+
+See [the routing guide](docs/routing.md) for authentication hooks, scopes,
+namespaces, shallow routes and custom action mappings.
+
+## Errors and request limits
+
+JSON bodies must be objects. Malformed JSON and malformed query inputs produce
+400. Bodies above 1 MiB produce 413, including bodies without a content length;
+`max_body_bytes` configures the limit.
+
+`MK::BadRequest`, `MK::Unauthorized`, `MK::Forbidden`, `MK::NotFound`,
+`MK::Conflict`, `MK::ValidationError` and `MK::BadGateway` represent intentional
+public errors. Their messages are public, so never put secrets in them.
+Unexpected errors return JSON with `error: "Server error"` and a request ID.
+The same ID appears in `X-Request-ID` and the structured error log.
 
 Production is the safe default. Set `RACK_ENV=development` explicitly for debug
 details. Configure a logger using `configure logger: Logger.new($stdout)`, or

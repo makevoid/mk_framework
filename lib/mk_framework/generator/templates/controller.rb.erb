@@ -8,7 +8,8 @@ module <%= config.namespace %>
   class <%= config.action_prefix %><%= action.capitalize %>Controller < MK::Controller
     route do |r|
 <% if action == 'index' -%>
-      <%= config.model_class %>.order(:id)
+      page = r.page
+      <%= config.model_class %>.order(:id).limit(page[:limit], page[:offset])
 <% elsif %w[show delete].include?(action) -%>
       <%= config.model_class %>[r.path_params.fetch(:id)] or raise MK::NotFound
 <% else -%>
