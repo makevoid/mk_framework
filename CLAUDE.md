@@ -8,6 +8,7 @@
 
 ## Design and style
 - Include `# frozen_string_literal: true` in Ruby files.
+- Generate bracketed symbol arrays such as `[:id, :title]`, not `%i[id title]`.
 - Always put spaces inside nonempty Ruby hash braces, including generated code: `{ post: model }`. Keep empty hashes as `{}`.
 - Use small Ruby blocks and explicit requires; keep classes in an application module.
 - Configure an absolute root and namespace, then call `App.boot!` after defining the app.

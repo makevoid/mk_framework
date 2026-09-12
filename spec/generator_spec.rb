@@ -61,6 +61,15 @@ RSpec.describe MK::Generator do
   end
 
   describe MK::Generator::Project do
+    it 'generates bracketed symbol arrays for validations and public fields' do
+      model = described_class.new(configuration).render.fetch('models/post.rb')
+
+      expect(model).to include('validates_not_null [:title, :contents]')
+      expect(model).to include('validates_presence [:title, :contents]')
+      expect(model).to include('[:id, :title, :contents, :created_at, :updated_at]')
+      expect(model).not_to include('%i[', '%I[')
+    end
+
     it 'generates five explicit CRUD examples with short model names' do
       Dir.mktmpdir do |directory|
         target = File.join(directory, 'blog')

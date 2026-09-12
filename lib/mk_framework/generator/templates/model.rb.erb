@@ -7,15 +7,15 @@ module <%= config.namespace %>
 
     def validate
       super
-      validates_not_null %i[<%= config.field_names.join(' ') %>]
+      validates_not_null <%= config.field_names.map(&:to_sym).inspect %>
 <% text_fields = config.fields.select { |field| %w[string text].include?(field[:type]) }.map { |field| field[:name] } -%>
 <% unless text_fields.empty? -%>
-      validates_presence %i[<%= text_fields.join(' ') %>]
+      validates_presence <%= text_fields.map(&:to_sym).inspect %>
 <% end -%>
     end
 
     def self.public_attributes_list
-      %i[id <%= config.field_names.join(' ') %> created_at updated_at]
+      <%= ([:id] + config.field_names.map(&:to_sym) + [:created_at, :updated_at]).inspect %>
     end
   end
 end

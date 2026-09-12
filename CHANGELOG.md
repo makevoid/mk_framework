@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.5 — 2026-09-12
+
+- Generate Gemfile dependencies in alphabetical order within each group.
+- Align generated database connection keyword arguments for RuboCop.
+- Generate bracketed symbol arrays in model validations and public attribute lists.
+
 ## 0.2.3 — 2026-09-12
 
 - Use `rack-test` and `Rack::Test::Methods` in generated request specs.
