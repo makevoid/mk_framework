@@ -141,419 +141,68 @@ bundle exec rake mk_framework:init DESTINATION=./blog_api \
 These are alternative invocations; choose one for a new destination. To expose the
 task in another project's Rakefile, add `require 'mk_framework/generator/tasks'`.
 
-## Try the examples
+## Try the sample applications
 
-Twenty paired sample applications (JSON APIs and MkFrame frontends) live in
-[mk_framework_sample_apps](https://github.com/makevoid/mk_framework_sample_apps)
-and install MK from RubyGems. Each sample has its own README, database migrations
-and isolated request specs. Backend use does not require a framework source checkout.
+The published [sample applications repository](https://github.com/makevoid/mk_framework_sample_apps)
+contains 33 runnable pairs of JSON APIs and MkFrame frontends. Each app has its own
+`sample_appNN/api/` and `sample_appNN/ui/` directories. Browse the
+[app catalog](https://github.com/makevoid/mk_framework_sample_apps/blob/main/Readme.md)
+to choose one; each app's `Readme.md` gives its setup and launch commands.
+The APIs use the published `mk_framework` gem from RubyGems, so no framework
+source checkout is required.
 
-From a sample-app checkout:
-
-```sh
-git clone git@github.com:makevoid/mk_framework_sample_apps.git
-cd mk_framework_sample_apps/sample_app4
-bundle install
-bundle exec rake db:migrate      # Explicit schema setup; never done on server boot
-bundle exec rake routes
-bundle exec rspec
-```
-
-All sample tests force `RACK_ENV=test` and use private in-memory SQLite databases.
-They never open `DATABASE_URL` or the development SQLite files. The weather tests
-stub HTTP and require no personal API key or internet connection.
-
-| Sample | Demonstrates |
-| --- | --- |
-| [1](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app1/README.md) | Basic todos and JSON CRUD |
-| [2](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app2/README.md) | Todo validation and request specs |
-| [3](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app3/README.md) | Custom response envelopes |
-| [4](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app4/README.md) | Blog posts, nested comments, parent scoping |
-| [5](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app5/README.md) | Kanban cards, validation, nested comments |
-| [6](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app6/README.md) | Weather client, deadlines, atomic cache refresh |
-| [7](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app7/README.md) | Kanban board, ordering, priorities, filters, archive and comments |
-| [8](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app8/README.md) | Single-user ecommerce, product image uploads and a persistent cart |
-| [9](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app9/README.md) | Fictional electric car inventory, charging specs and reservations |
-| [10](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app10/README.md) | Buildlog developer journal, project portfolio and private publishing workbench |
-| [11](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app11/README.md) | Rolecraft job board, employer submissions, moderation and private applications |
-| [12](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app12/README.md) | Reboot Market electronics classifieds, photo uploads, private inquiries, saved searches and moderation |
-| [13](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app13/README.md) | Pinpoint map directory, geographic filters, contributor history and transactional approval |
-| [14](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app14/README.md) | Studio Hours timed resource bookings, Zurich availability, maintenance and transactional conflict prevention |
-| [15](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app15/README.md) | Pantry Table recipes, private meal plans, pantry stock and derived shopping quantities |
-| [16](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app16/README.md) | Assembly community events, workshop capacity, FIFO waitlists, organizer management and check-in |
-| [17](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app17/README.md) | Fairshare private expense groups, exact splits, receipts, balances and reimbursements |
-| [18](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app18/README.md) | Signalboard feedback, voting, moderation, duplicate merges, roadmap and releases |
-| [19](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app19/README.md) | Night Archive NASA discovery, private collections and observing journal |
-| [20](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app20/README.md) | Fieldwork private plant collection, care schedules and growth journals |
-
-## Walkthrough: sample app 4, a blog API
-
-[Sample app 4](https://github.com/makevoid/mk_framework_sample_apps/tree/main/sample_app4)
-stores posts and their comments in SQLite and exposes JSON CRUD endpoints. A post
-has a title and optional description; a comment belongs to a post and has content
-and an optional author. Both models maintain creation and update timestamps.
-Deleting a post also deletes its comments through a cascading foreign key.
-
-Clients can list posts, request their comments with `GET /posts?comments=1`, create
-a post with `POST /posts`, and edit a comment with
-`PATCH /posts/:post_id/comments/:id`. Nested comment lookups check the URL parent,
-so using another post's ID returns 404. This sample has no authentication;
-parent scoping checks the relationship, while user access rules belong in your app.
-
-### Directory structure
-
-The samples share database and Rake helpers in the repository-level `support/`
-directory. Keep that directory when copying a sample; use the CLI above for a
-self-contained starter. This tree lists
-the six action files explained below; the sample also includes the remaining CRUD
-controllers and handlers for both resources.
-
-```text
-sample_app4/
-├── Gemfile
-├── Rakefile
-├── database.rb              # SampleApp4::ROOT and SampleApp4::DB
-├── app.rb                   # Requires, namespace, routes, and boot!
-├── config.ru                # Rack entrypoint
-├── db/migrations/
-│   └── 001_initial.rb       # posts, comments, indexes, and foreign key
-├── models/
-│   ├── post.rb
-│   └── comment.rb
-├── routes/
-│   ├── posts/
-│   │   ├── controllers/
-│   │   │   ├── create.rb
-│   │   │   └── index.rb
-│   │   └── handlers/
-│   │       ├── create.rb
-│   │       └── index.rb
-│   └── comments/
-│       ├── controllers/update.rb
-│       └── handlers/update.rb
-└── spec/
-    ├── spec_helper.rb
-    ├── boot_spec.rb
-    └── request/
-        ├── posts_spec.rb
-        ├── comments_spec.rb
-        ├── nested_comments_spec.rb
-        └── handler_boundary_spec.rb
-```
-
-### Setup, database, and boot
-
-The sample's `Gemfile` includes the framework, Sequel, SQLite, Rack server tools,
-and request-test dependencies:
-
-```ruby
-source 'https://rubygems.org'
-
-gem 'mk_framework', '~> 0.2.2'
-gem 'sequel', '>= 5.92', '< 6'
-gem 'sqlite3', '~> 2.9'
-gem 'rake', '~> 13.4'
-gem 'rackup', '~> 2.3'
-gem 'puma', '~> 8.0'
-
-group :test do
-  gem 'rspec', '~> 3.13'
-  gem 'rack-test', '~> 2.2'
-end
-```
-
-From `mk_framework_sample_apps/sample_app4`, run:
+To run [sample 04, Fieldnotes](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app04/Readme.md)
+with its UI:
 
 ```sh
+git clone https://github.com/makevoid/mk_framework_sample_apps.git
+cd mk_framework_sample_apps
 bundle install
-bundle exec rake db:migrate
+cd sample_app04
+bundle exec rake setup
+bundle exec rake dev
+```
+
+Open the UI at `http://127.0.0.1:5184/`; its API listens at
+`http://127.0.0.1:9404`. `setup` installs the API and UI dependencies, migrates
+the database, and seeds demo data. Later starts only need `bundle exec rake dev`.
+Run `bundle exec rake spec` from `sample_app04` for its API request specs.
+
+From the sample repository root, follow the API's
+[API README](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app04/api/README.md):
+
+```sh
+cd sample_app04/api
+bundle install
+bundle exec rake db:seed
 bundle exec rake routes
-bundle exec rspec
+bundle exec rake dev
 ```
 
-`Rakefile` loads `../support/tasks.rb` and installs the shared tasks with
-`SampleTasks.install(__dir__)`.
-`db:migrate` loads `database.rb` and applies `db/migrations/001_initial.rb` before
-any models are loaded. The migration creates `posts` and `comments`, including
-required timestamps and a non-null `comments.post_id` foreign key with cascading
-deletion. Schema changes are an explicit step; starting the app never migrates it.
+The API-only server defaults to `http://127.0.0.1:3000`. `db:seed` applies the
+migration explicitly before loading fixtures; server boot never migrates or seeds.
+The API README documents endpoints, data rules, deployment settings and tests.
 
-**`sample_app4/database.rb`**
+### Study sample 04's request flow
 
-```ruby
-# frozen_string_literal: true
-
-require_relative '../support/database'
-
-module SampleApp4
-  ROOT = __dir__.freeze
-  DB = SampleDatabase.connect(root: ROOT, filename: 'blog.db')
-end
-```
-
-`SampleDatabase.connect` defaults to `sample_app4/blog.db`, using an absolute path.
-It accepts `DATABASE_URL`, `DB_POOL_SIZE`, and `DB_POOL_TIMEOUT` for deployment.
-In tests it always opens a private in-memory SQLite database; `spec_helper.rb`
-migrates that database before requiring `app.rb`.
-
-**`sample_app4/app.rb`**
-
-```ruby
-# frozen_string_literal: true
-
-require 'mk_framework/sequel'
-require_relative 'database'
-require_relative 'models/post'
-require_relative 'models/comment'
-
-module SampleApp4
-  class Controller < MK::Controller
-  end
-
-  class App < MK::Application
-    configure root: ROOT, namespace: SampleApp4
-
-    resource_routes do
-      resources :posts do
-        resources :comments
-      end
-      resources :comments, only: %i[show update delete]
-    end
-  end
-
-  App.boot!
-end
-```
-
-The load order is deliberate: enable MK's Sequel integration, connect the database,
-load both models, define the shared controller base and application, then call
-`App.boot!`. `ROOT` anchors file loading independently of the working directory;
-`namespace: SampleApp4` tells MK where to resolve controller and handler classes.
-
-The nested declaration generates post and comment CRUD routes. The final
-`resources :comments, only: ...` also exposes the sample's compatibility member
-routes, such as `PATCH /comments/:id`; it does not create a parentless comments
-collection. Both forms use the same comment action classes.
-
-`boot!` loads Ruby files under `routes/`, resolves controller/handler pairs,
-validates the route table, and freezes configuration. For example,
-`posts/create` resolves to `SampleApp4::PostsCreateController` and
-`SampleApp4::PostsCreateHandler`. Missing handlers fail at boot. Without a
-`resource_routes` block, MK can discover standard actions from
-`routes/*/controllers`; explicit declarations make nested routes easier to inspect.
-
-**`sample_app4/config.ru`**
-
-```ruby
-# frozen_string_literal: true
-
-require_relative 'app'
-run SampleApp4::App.app
-```
-
-Rack loads this entrypoint and serves the already booted `SampleApp4::App.app`.
-The sample's request and boot specs exercise it without starting a server,
-including loading it from a different working directory.
-
-### Example 1: create a post
-
-`POST /posts` accepts a JSON object such as
-`{"title":"First post","description":"Notes from the garden"}`.
-
-**`sample_app4/routes/posts/controllers/create.rb`**
-
-```ruby
-# frozen_string_literal: true
-
-module SampleApp4
-  class PostsCreateController < Controller
-    route do |r|
-      Post.new(r.input.permit(title: [String, NilClass], description: [String, NilClass]))
-    end
-  end
-end
-```
-
-The controller permits only `title` and `description` and returns an unsaved
-`Post`. Strings and null are accepted at the input boundary; the model requires a
-nonblank title of at most 100 characters. Missing or null titles therefore reach
-model validation and return 422. Unexpected input types return 400.
-
-MK recognizes the `create` action, saves the returned model once, and converts
-its attributes to a hash before invoking the handler.
-
-**`sample_app4/routes/posts/handlers/create.rb`**
-
-```ruby
-# frozen_string_literal: true
-
-module SampleApp4
-  class PostsCreateHandler < MK::Handler
-    handler do |r|
-      r.response.status = 201
-      {message: 'Post created', post: model.slice(*Post.public_attributes_list)}
-    end
-  end
-end
-```
-
-The response is 201 with a `message` and a `post` object containing only the fields
-in `Post.public_attributes_list`: `id`, `title`, `description`, `created_at`, and
-`updated_at`. The handler neither saves the model nor serializes JSON itself.
-
-**Evolve it:** add a nullable `slug` column and a unique index in a new migration,
-then add slug validation in `models/post.rb`, permit `slug` in create/update
-controllers, and include it in `Post.public_attributes_list` if clients need it.
-A generated slug belongs in a model hook or controller. Keep the handler focused
-on the response, and extend `spec/request/posts_spec.rb` to cover creation,
-validation, and duplicate slugs.
-
-### Example 2: list posts with optional comments
-
-`GET /posts?comments=1&limit=10&offset=0` returns up to ten posts with their comments.
-Omit `comments=1` to return only post attributes.
-
-**`sample_app4/routes/posts/controllers/index.rb`**
-
-```ruby
-# frozen_string_literal: true
-
-module SampleApp4
-  class PostsIndexController < Controller
-    route do |r|
-      page = r.page
-      posts = Post.order(:id).limit(page[:limit], page[:offset])
-      posts = posts.eager(:comments) if r.params['comments'] == '1'
-      posts.all.map do |post|
-        attributes = post.values.dup
-        if r.params['comments'] == '1'
-          attributes[:comments] = post.comments
-        end
-        attributes
-      end
-    end
-  end
-end
-```
-
-`r.page` validates pagination. Posts have a stable ID order, a default page size
-of 25, a maximum of 100, and an offset limit of 10,000. When requested, Sequel
-loads comments eagerly in one additional query, avoiding a separate query per
-post. The controller selects associations explicitly and returns their data;
-MK recursively converts the nested comment models to hashes.
-
-**`sample_app4/routes/posts/handlers/index.rb`**
-
-```ruby
-# frozen_string_literal: true
-
-module SampleApp4
-  class PostsIndexHandler < MK::Handler
-    handler do |r|
-      model.map do |post|
-        attributes = post.slice(*Post.public_attributes_list)
-        if post.key?(:comments)
-          attributes[:comments] = post.fetch(:comments).map { |comment| comment.slice(*Comment.public_attributes_list) }
-        end
-        attributes
-      end
-    end
-  end
-end
-```
-
-The response is a JSON array. A post includes `comments` only when the controller
-supplied that key; posts without comments then have `comments: []`. The handler
-filters each supplied hash and performs no queries. Pagination bounds the number
-of posts here, but includes all comments for those posts. Use
-`GET /posts/:post_id/comments?limit=10&offset=0` for a paginated comment collection.
-
-**Evolve it:** add a `published` boolean in a migration and validate/permit it in
-the model and write actions. For a public feed, start the index query from
-`Post.where(published: true)` before ordering, pagination, and eager loading.
-Apply the same publication policy to show and comment routes. An authenticated
-editor view can select a broader dataset in its controller; handlers can keep the
-same response shape. Extend the index specs to check which posts are visible and
-that including comments still uses two queries for a nonempty page.
-
-To evolve the response into `{posts: [...], pagination: {...}}`, have the controller
-return the selected posts and pagination metadata together, then update the handler
-to filter the posts and build that envelope. Any total-count query belongs in the
-controller. Update client expectations and request specs for the changed shape,
-and keep the handler's no-SQL check.
-
-### Example 3: update a comment through its post
-
-`PATCH /posts/12/comments/34` with `{"content":"An updated reply"}` changes only
-comment 34 belonging to post 12. Unspecified fields, such as `author`, retain
-their stored values.
-
-**`sample_app4/routes/comments/controllers/update.rb`**
-
-```ruby
-# frozen_string_literal: true
-
-module SampleApp4
-  class CommentsUpdateController < Controller
-    route do |r|
-      comments = Comment.where(id: r.path_params.fetch(:id))
-      if (post_id = r.path_params[:post_id])
-        post = Post[post_id]
-        raise MK::NotFound, 'Post not found' unless post
-
-        comments = post.comments_dataset.where(id: r.path_params.fetch(:id))
-      end
-      comment = comments.first
-      raise MK::NotFound, 'Comment not found' unless comment
-
-      comment.set(r.input.permit(content: [String, NilClass], author: [String, NilClass]))
-      comment
-    end
-  end
-end
-```
-
-On a nested route, the controller first finds the post, then selects the comment
-through `post.comments_dataset`. A missing post or a comment belonging to another
-post returns 404. Only `content` and `author` can be assigned; a body `post_id`
-cannot move the comment. The parentless compatibility route uses the initial
-comment lookup instead.
-
-`comment.set` assigns the permitted fields without writing. Returning the model
-lets MK save it once for the `update` action, validate it, update its timestamp,
-and hand raw attributes to the handler. Blank content fails validation with 422.
-
-**`sample_app4/routes/comments/handlers/update.rb`**
-
-```ruby
-# frozen_string_literal: true
-
-module SampleApp4
-  class CommentsUpdateHandler < MK::Handler
-    handler do |r|
-      {message: 'Comment updated', comment: model.slice(*Comment.public_attributes_list)}
-    end
-  end
-end
-```
-
-The successful response is 200 with `message` and a `comment` object containing
-`id`, `post_id`, `content`, `author`, `created_at`, and `updated_at`.
-
-**Evolve it:** for per-user editing, authenticate the request and select the post
-from the signed-in user's authorized dataset before selecting its comment. Add
-any separate comment-edit permission check in the controller. Remove the
-parentless `resources :comments, only: ...` declaration if edits must always use
-a post URL, or apply equivalent authorization to that branch. Extend
-`spec/request/nested_comments_spec.rb` to cover another user's post, a wrong URL
-parent, and a spoofed body `post_id`, confirming denied writes leave data intact.
-The handler can remain unchanged.
+The [post creation controller](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app04/api/routes/posts/controllers/create.rb)
+permits `title` and `description` and returns a new `Post`. MK saves the record;
+the [handler](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app04/api/routes/posts/handlers/create.rb)
+selects public fields and sets status 201. The
+[post index controller](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app04/api/routes/posts/controllers/index.rb)
+selects and paginates records, optionally eager loading comments; its
+[handler](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app04/api/routes/posts/handlers/index.rb)
+formats the selected data. The
+[nested comment update controller](https://github.com/makevoid/mk_framework_sample_apps/blob/main/sample_app04/api/routes/comments/controllers/update.rb)
+looks up a comment through its URL parent before assigning permitted fields.
+The [request specs](https://github.com/makevoid/mk_framework_sample_apps/tree/main/sample_app04/api/spec/request)
+exercise those behaviors and check that handlers perform no SQL.
 
 ## Controllers prepare; the framework persists; handlers respond
 
-The three pairs above share the same boundary: controllers own queries, input
-assignment, and access rules; handlers own public fields, status, and response
-shape. `Post.public_attributes_list` and `Comment.public_attributes_list` are
+In sample 04, controllers own queries, input assignment, and access rules;
+handlers own public fields, status, and response shape.
+`Post.public_attributes_list` and `Comment.public_attributes_list` are
 application-defined field lists. The sample's `handler_boundary_spec.rb` checks
 that every handler runs without issuing SQL.
 
