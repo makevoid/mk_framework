@@ -1,7 +1,9 @@
 # MK Framework
 
-Small, explicit JSON APIs on [Roda](https://roda.jeremyevans.net/), with optional
-[Sequel](https://sequel.jeremyevans.net/) persistence. Ruby 3.2 or newer. MIT licensed.
+Opinionated blazing fast Ruby API framework for creating JSON APIs with optional SQL (e.g. sqlite) backend.
+
+Powered by [Roda](https://roda.jeremyevans.net/), and [Sequel](https://sequel.jeremyevans.net/)
+
 
 MK gives each action an obvious home:
 
