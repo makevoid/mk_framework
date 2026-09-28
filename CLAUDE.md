@@ -6,6 +6,11 @@
 - Run framework specs: `bundle exec rspec spec`
 - Build the gem: `bundle exec rake build`
 
+## Releases
+- Publish releases to [RubyGems](https://rubygems.org/gems/mk_framework), not GitHub Releases. Do not create GitHub Releases; Git tags can still mark versions.
+- Run the framework tests and build the gem before publishing it with `gem push pkg/mk_framework-VERSION.gem` (replace `VERSION` with the release version).
+- After publishing, verify the version on RubyGems and update the latest release version and its RubyGems link at the top of `README.md`. Keep the README installation examples and gem filename in sync with the published version.
+
 ## Design and style
 - Include `# frozen_string_literal: true` in Ruby files.
 - Generate bracketed symbol arrays such as `[:id, :title]`, not `%i[id title]`.

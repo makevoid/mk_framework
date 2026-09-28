@@ -1,5 +1,7 @@
 # MK Framework
 
+Latest release: [0.2.5 on RubyGems](https://rubygems.org/gems/mk_framework/versions/0.2.5).
+
 Opinionated blazing fast Ruby API framework for creating JSON APIs with optional SQL (e.g. sqlite) backend.
 
 Powered by [Roda](https://roda.jeremyevans.net/), and [Sequel](https://sequel.jeremyevans.net/)
