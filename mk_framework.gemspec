@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.authors = ['Francesco Canessa']
   spec.summary = 'Small, explicit JSON APIs on Roda'
   spec.homepage = 'https://github.com/makevoid/mk_framework'
-  spec.description = 'Resource routing, controllers, and response handlers with optional Sequel persistence.'
+  spec.description = 'Opinionated blazing fast Ruby API framework for creating JSON APIs with integrated SQLite/PG backend.'
   spec.license = 'MIT'
   spec.required_ruby_version = '>= 3.2'
   spec.files = Dir['lib/**/*.rb', 'lib/**/*.erb', 'bin/*', 'README.md', 'LICENSE', 'CHANGELOG.md', 'docs/*.md']
